@@ -1,12 +1,15 @@
 import numpy as np
 import cv2
 
-help_message = '''USAGE: canny.py [<image>]'''
+help_message = '''USAGE: canny_test.py [<image>]'''
 
 if __name__ == '__main__':
     import sys
-    try: fn = sys.argv[1]
-    except: print help_message
+    try:
+	fn = sys.argv[1]
+    except:
+	print help_message
+	sys.exit(-1)
 
     img = cv2.imread(fn, True)
     
