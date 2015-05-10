@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: /home/birger/Documents/ICTScan/ICTScan/libraries/opencv/src/org/opencv/engine/OpenCVEngineInterface.aidl
+ * Original file: C:\\Users\\Lotti\\ICTScan\\ICTScan\\libraries\\opencv\\src\\org\\opencv\\engine\\OpenCVEngineInterface.aidl
  */
 package org.opencv.engine;
 /**
