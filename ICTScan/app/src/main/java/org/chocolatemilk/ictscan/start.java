@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -16,6 +17,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -39,8 +41,22 @@ public class start extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
-        b=(Button)findViewById(R.id.btnSelectPhoto);//Button aus dem xml der Activity
-        viewImage=(ImageView)findViewById(R.id.viewImage);//ImageView -----"-----
+        b = (Button) findViewById(R.id.btnSelectPhoto);//Button aus dem xml der Activity
+        viewImage = (ImageView) findViewById(R.id.viewImage);//ImageView -----"-----
+
+
+        final DragPointView dragPoint = (DragPointView) findViewById(R.id.dragPoint);
+
+        if (null != dragPoint) {
+            dragPoint.setOnUpCallback(new DragPointView.OnUpCallback() {
+                @Override
+                public void onPointFinished(final Point point) {
+                    Toast.makeText(getApplicationContext(), "Point is (" + point.x+ ", " + point.y + ")",
+                            Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -48,7 +64,6 @@ public class start extends ActionBarActivity {
             }
         });
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {

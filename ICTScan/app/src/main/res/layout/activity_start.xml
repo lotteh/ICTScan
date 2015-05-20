@@ -21,17 +21,23 @@
             android:text="@string/button_text" />
 
     </LinearLayout>
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         android:padding="10dp" >
 
         <ImageView
             android:id="@+id/viewImage"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_action_photo" />
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_action_photo"
+            android:scaleType="centerInside"/>
 
-    </LinearLayout>
+        <org.chocolatemilk.ictscan.DragPointView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/dragPoint" />
+
+
+    </RelativeLayout>
 </LinearLayout>
