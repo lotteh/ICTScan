@@ -1,9 +1,7 @@
 import numpy as np
 import cv2
 
-
-
-help_message = '''USAGE: scan.py [<image>]'''
+help_message = '''USAGE: slat_recognition.py [<image>]'''
 
 if __name__ == '__main__':
     import sys
