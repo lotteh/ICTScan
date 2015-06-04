@@ -63,7 +63,7 @@ src = cv2.imread(fn, True);
 cv2.namedWindow("Quelle", cv2.WINDOW_AUTOSIZE);
 cv2.imshow("Quelle", src);
 
-cv2.cv.SetMouseCallback("Quelle", callback_onMouse, "Hello World!");
+cv2.setMouseCallback("Quelle", callback_onMouse, "Hello World!");
 c = 0;
 while c != 1048603:
 	c = cv2.waitKey(0)
