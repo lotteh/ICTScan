@@ -60,7 +60,7 @@ except:
 
 src = cv2.imread(fn, True);
 
-cv2.namedWindow("Quelle", cv2.WINDOW_AUTOSIZE);
+cv2.namedWindow("Quelle", cv2.WINDOW_NORMAL);
 cv2.imshow("Quelle", src);
 
 cv2.setMouseCallback("Quelle", callback_onMouse, "Hello World!");

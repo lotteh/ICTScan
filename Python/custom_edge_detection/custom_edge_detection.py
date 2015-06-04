@@ -20,7 +20,7 @@ if __name__ == '__main__':
     cdf = hist.cumsum()
     cdf_normalized = cdf * hist.max()/ cdf.max()
 
-    hist_max_index = np.argmax(hist)
+    hist_max_index = np.argmax(hist[25:200:1])
     hist_min_index = hist_max_index + np.argmin(hist[hist_max_index:hist_max_index + 50]);
 
     img_gray[np.where(img_gray > hist_min_index)] = 255
