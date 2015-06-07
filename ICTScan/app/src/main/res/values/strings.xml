@@ -3,4 +3,27 @@
 
     <string name="action_settings">Settings</string>
     <string name="button_text">Take or choose Photo</string>
+    <string name="textView_start">First take or choose a photo</string>
+    <string name="textView_corner_tl">Now select the corners: Start with the top-left corner</string>
+    <string name="textView_corner_tr">Continue with the top-right corner</string>
+    <string name="textView_corner_br">Continue with the bottom-right corner</string>
+    <string name="textView_corner_bl">And, at last, the bottom-left corner</string>
+    <string name="textView_confirm">Are you happy with your choice? Please confirm</string>
+
+    <string name="leer"> </string>
+    <string name="confirm">"Press -OK- , if your point is ok"</string>
+    <string name="OK">OK</string>
+
+    <string-array
+        name="textView_corners">
+        <item>Now select the corners: Start with the top-left corner
+        </item>
+        <item>Continue with the top-right corner
+        </item>
+        <item>Continue with the bottom-right corner
+        </item>
+        <item>And, at last, the bottom-left corner
+        </item>
+    </string-array>
+
 </resources>
