@@ -12,7 +12,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:padding="5dp" >
+        android:padding="5dp"
+        android:orientation="vertical">
 
         <Button
             android:id="@+id/btnSelectPhoto"
@@ -20,7 +21,16 @@
             android:layout_height="wrap_content"
             android:text="@string/button_text" />
 
+        <TextView
+            android:id="@+id/textInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/textView_start"
+            android:gravity="center"/>
+
     </LinearLayout>
+
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -28,16 +38,61 @@
 
         <ImageView
             android:id="@+id/viewImage"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:src="@drawable/ic_action_photo"
-            android:scaleType="centerInside"/>
+            android:scaleType="centerInside"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            />
 
         <org.chocolatemilk.ictscan.DragPointView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/dragPoint" />
+            android:layout_width="0px"
+            android:layout_height="0px"
+            android:layout_alignLeft="@+id/viewImage"
+            android:layout_alignRight="@+id/viewImage"
+            android:layout_alignTop="@+id/viewImage"
+            android:layout_alignBottom="@+id/viewImage"
+            android:id="@+id/dragPointTL"/>
 
+        <org.chocolatemilk.ictscan.DragPointView
+            android:layout_width="0px"
+            android:layout_height="0px"
+            android:layout_alignLeft="@+id/viewImage"
+            android:layout_alignRight="@+id/viewImage"
+            android:layout_alignTop="@+id/viewImage"
+            android:layout_alignBottom="@+id/viewImage"
+            android:id="@+id/dragPointTR"
+            android:visibility="gone"/>
 
-    </RelativeLayout>
+        <org.chocolatemilk.ictscan.DragPointView
+            android:layout_width="0px"
+            android:layout_height="0px"
+            android:layout_alignLeft="@+id/viewImage"
+            android:layout_alignRight="@+id/viewImage"
+            android:layout_alignTop="@+id/viewImage"
+            android:layout_alignBottom="@+id/viewImage"
+            android:id="@+id/dragPointBR"
+            android:visibility="gone"/>
+
+        <org.chocolatemilk.ictscan.DragPointView
+            android:layout_width="0px"
+            android:layout_height="0px"
+            android:layout_alignLeft="@+id/viewImage"
+            android:layout_alignRight="@+id/viewImage"
+            android:layout_alignTop="@+id/viewImage"
+            android:layout_alignBottom="@+id/viewImage"
+            android:id="@+id/dragPointBL"
+            android:visibility="gone"/>
+
+        <Button
+            android:id="@+id/btnConfirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:text="@string/OK"
+            android:layout_centerVertical="true"
+            android:visibility="invisible"/>
+
+        </RelativeLayout>
 </LinearLayout>
