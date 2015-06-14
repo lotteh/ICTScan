@@ -3,4 +3,7 @@
     <color
         name="holo_green_light"
         >#FF65E919</color>
+    <color
+        name="gray_cross"
+        >#ff9e9ea1</color>
 </resources>

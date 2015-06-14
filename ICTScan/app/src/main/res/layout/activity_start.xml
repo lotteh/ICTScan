@@ -34,14 +34,15 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="10dp" >
+        >
 
         <ImageView
             android:id="@+id/viewImage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_action_photo"
-            android:scaleType="centerInside"
+            android:src="@drawable/ic_action_camera"
+            android:scaleType="fitXY"
+            android:adjustViewBounds="true"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
             />
@@ -93,6 +94,14 @@
             android:text="@string/OK"
             android:layout_centerVertical="true"
             android:visibility="invisible"/>
+        <TextView
+            android:id="@+id/textTest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:gravity="center"
+            android:layout_below="@+id/btnConfirm"
+            android:layout_alignParentRight="true"/>
 
         </RelativeLayout>
 </LinearLayout>
