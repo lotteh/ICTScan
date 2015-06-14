@@ -11,6 +11,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -34,14 +35,28 @@ public class DragPointView extends View {
 
 
     private boolean zooming = false;
-    private PointF zoomPos;
     private Matrix matrix;
     private Bitmap mBitmap;
     private BitmapShader mShader;
-    private Paint mPaint;
+    private Paint mCirclePaint;
+    private Paint mCrossPaint;
     public ImageView viewImage;
 
     private DragPointView.OnUpCallback mCallback = null;
+
+
+    private int intrinsicHeight = 0;
+    private int intrinsicWidth = 0;
+    private int scaledHeight = 0;
+    private int scaledWidth = 0;
+    private float heightRatio = 0;
+    private float widthRatio = 0;
+    private int scaledImageOffsetX = 0;
+    private int scaledImageOffsetY = 0;
+    private int originalImageOffsetX = 0;
+    private int originalImageOffsetY = 0;
+
+    private int [] coordinates = new int [2];
 
     public interface OnUpCallback {
         void onPointFinished(Point point);
@@ -86,17 +101,20 @@ public class DragPointView extends View {
         mTextPaint.setTextSize(20);
 
         zooming = false;
-        zoomPos = new PointF(0,0);
         matrix = new Matrix();
-        mPaint = new Paint();
+        mCirclePaint = new Paint();
+
+        mCrossPaint = new Paint();
+        mCrossPaint.setColor(getContext().getResources().getColor(R.color.gray_cross));
+        mCrossPaint.setStyle(Paint.Style.STROKE);
+        mCrossPaint.setStrokeWidth(5);
+
+
 }
 
     @Override
     public boolean onTouchEvent(final MotionEvent event) {
         if (!readyForTouch) return true;
-
-        zoomPos.x = event.getX();
-        zoomPos.y = event.getY();
         // TODO: be aware of multi-touches
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
@@ -151,32 +169,27 @@ public class DragPointView extends View {
         }
 
         if (zooming && null!=viewImage) {
-            float [] coordinates = transformCoordinates(mTempX,mTempY);
-            mBitmap = ((BitmapDrawable)viewImage.getDrawable()).getBitmap(); // get Image
-            mShader = new BitmapShader(mBitmap, Shader.TileMode.MIRROR, Shader.TileMode.MIRROR);
-            mPaint.setShader(mShader);
-            matrix.reset();
-            matrix.postScale(2f, 2f, coordinates[0], coordinates[1]);
-            mPaint.getShader().setLocalMatrix(matrix);
+            coordinates = transformCoordinates(mTempX,mTempY);
 
-            canvas.drawCircle(100, 115, 90, mPaint); //Fixed position
+            mBitmap = ((BitmapDrawable)viewImage.getDrawable()).getBitmap(); // get Image
+            mShader = new BitmapShader(mBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+            mCirclePaint.setShader(mShader);
+            matrix.reset();
+            matrix.postScale(2f, 2f, 2*coordinates[0], 2*coordinates[1]);
+            mCirclePaint.getShader().setLocalMatrix(matrix);
+
+            canvas.drawCircle(mTempX, mTempY, 90, mCirclePaint);//Fixed position: 100, 115
+
+            canvas.drawLine(mTempX-90, mTempY, mTempX+90, mTempY, mCrossPaint);//Fadenkreuz
+            canvas.drawLine(mTempX, mTempY-90, mTempX, mTempY+90, mCrossPaint);
         }
     }
 
     public void fix_coordinates()
     {
-        mEndX = mTempX;
-        mEndY = mTempY;
-    }
-
-    public int getCurX()
-    {
-        return mTempX;
-    }
-
-    public int getCurY()
-    {
-        return mTempY;
+        coordinates = transformCoordinates(mTempX, mTempY);
+        mEndX = coordinates[0];
+        mEndY = coordinates[1];
     }
 
     public void reset()
@@ -189,13 +202,60 @@ public class DragPointView extends View {
         invalidate();
     }
 
-    public float[] transformCoordinates(float x, float y) {
-        float [] coordinates = new float [] {x, y};
-        Matrix matrix = new Matrix();
-        viewImage.getImageMatrix().invert(matrix); // Inside a class that extends ImageView. Hence this->ImageView
-        matrix.postTranslate(viewImage.getScrollX(), viewImage.getScrollY());
-        matrix.mapPoints(coordinates);
+    public int[] transformCoordinates(int X, int Y) {
+        /*int[] location = new int[2];
+        viewImage.getLocationOnScreen(location);*/
+
+        Drawable drawable = viewImage.getDrawable();
+        Rect imageBounds = drawable.getBounds();
+
+        //original height and width of the bitmap
+        intrinsicHeight = drawable.getIntrinsicHeight();
+        intrinsicWidth = drawable.getIntrinsicWidth();
+
+        //height and width of the visible (scaled) image
+        scaledHeight = imageBounds.height();
+        scaledWidth = imageBounds.width();
+
+        //Find the ratio of the original image to the scaled image
+        //Should normally be equal unless a disproportionate scaling
+        //(e.g. fitXY) is used.
+        heightRatio = intrinsicHeight / scaledHeight;
+        widthRatio = intrinsicWidth / scaledWidth;
+
+        //get the distance from the left and top of the image bounds
+        scaledImageOffsetX = X - imageBounds.left;//location[0];
+        scaledImageOffsetY = Y - imageBounds.top; //location[1]
+
+        //scale these distances according to the ratio of your scaling
+        //For example, if the original image is 1.5x the size of the scaled
+        //image, and your offset is (10, 20), your original image offset
+        //values should be (15, 30).
+        originalImageOffsetX = (int) (scaledImageOffsetX * widthRatio);
+        originalImageOffsetY = (int) (scaledImageOffsetY * heightRatio);
+
+        int[] coordinates = new int[] {originalImageOffsetX, originalImageOffsetY};
         return coordinates;
+    }
+
+    public int getCurX()
+    {
+        return mTempX;
+    }
+
+    public int getCurY()
+    {
+        return mTempY;
+    }
+
+    public int getFinalX()
+    {
+        return mEndX;
+    }
+
+    public int getFinalY()
+    {
+        return mEndY;
     }
 
 }
