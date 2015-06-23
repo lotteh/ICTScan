@@ -40,7 +40,7 @@ public class DragPointView extends View {
     private BitmapShader mShader;
     private Paint mCirclePaint;
     private Paint mCrossPaint;
-    public ImageView viewImage;
+    public TouchImageView viewImage;
 
     private DragPointView.OnUpCallback mCallback = null;
 
@@ -56,6 +56,7 @@ public class DragPointView extends View {
     private int originalImageOffsetX = 0;
     private int originalImageOffsetY = 0;
 
+    private int [] fixedPos = new int[2];
     private int [] coordinates = new int [2];
 
     public interface OnUpCallback {
@@ -94,7 +95,7 @@ public class DragPointView extends View {
         mPointPaint = new Paint();
         mPointPaint.setColor(getContext().getResources().getColor(R.color.holo_green_light));
         mPointPaint.setStyle(Paint.Style.STROKE);
-        mPointPaint.setStrokeWidth(15); // TODO: should take from resources
+        mPointPaint.setStrokeWidth(5); // TODO: should take from resources
 
         mTextPaint = new TextPaint();
         mTextPaint.setColor(getContext().getResources().getColor(R.color.holo_green_light));
@@ -109,7 +110,6 @@ public class DragPointView extends View {
         mCrossPaint.setStyle(Paint.Style.STROKE);
         mCrossPaint.setStrokeWidth(5);
 
-
 }
 
     @Override
@@ -122,6 +122,7 @@ public class DragPointView extends View {
                 mTempX = (int) event.getX();
                 mTempY = (int) event.getY();
                 zooming = true;
+                coordinates = transformCoordinates(mTempX,mTempY);
                 invalidate();
                 break;
 
@@ -129,9 +130,10 @@ public class DragPointView extends View {
                 final int x = (int) event.getX();
                 final int y = (int) event.getY();
 
-                if (!mDrawPoint || Math.abs(x - mTempX) > 5 || Math.abs(y - mTempY) > 5) {
+                if (!mDrawPoint || Math.abs(x - mTempX) > 2 || Math.abs(y - mTempY) > 2) {
                     mTempX = x;
                     mTempY = y;
+                    coordinates = transformCoordinates(mTempX,mTempY);
                     invalidate();
                 }
                 mDrawPoint = true;
@@ -143,11 +145,14 @@ public class DragPointView extends View {
                     mCallback.onPointFinished(new Point(mTempX, mTempY));
                 }
                 zooming = false;
+                mDrawPoint = true;
+                coordinates = transformCoordinates(mTempX,mTempY);
                 invalidate();
                 break;
 
             case MotionEvent.ACTION_CANCEL:
                 zooming = false;
+                coordinates = transformCoordinates(mTempX,mTempY);
                 this.invalidate();
                 break;
 
@@ -161,16 +166,21 @@ public class DragPointView extends View {
     @Override
     protected void onDraw(final Canvas canvas) {
         super.onDraw(canvas);
+        scaledWidth=this.getWidth();
+        scaledHeight=this.getHeight();
+
+        if (mTempX<scaledWidth/2) fixedPos[0] = (int)(scaledWidth*0.75);
+        else fixedPos[0] = (int)(scaledWidth*0.25);
+        if (mTempY<scaledHeight/2) fixedPos[1] = (int)(scaledHeight*0.75);
+        else fixedPos[1] = (int)(scaledHeight*0.25);
 
         if (mDrawPoint) {
             canvas.drawPoint(mTempX, mTempY, mPointPaint);
-            canvas.drawText("  (" + mTempX + ", " + mTempY + ")",
+            canvas.drawText("  (" + coordinates[0] + ", " + coordinates[1] + ")",
                     mTempX, mTempY, mTextPaint);
         }
 
-        if (zooming && null!=viewImage) {
-            coordinates = transformCoordinates(mTempX,mTempY);
-
+        /*if (zooming && null!=viewImage) {
             mBitmap = ((BitmapDrawable)viewImage.getDrawable()).getBitmap(); // get Image
             mShader = new BitmapShader(mBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
             mCirclePaint.setShader(mShader);
@@ -178,33 +188,31 @@ public class DragPointView extends View {
             matrix.postScale(2f, 2f, 2*coordinates[0], 2*coordinates[1]);
             mCirclePaint.getShader().setLocalMatrix(matrix);
 
-            canvas.drawCircle(mTempX, mTempY, 90, mCirclePaint);//Fixed position: 100, 115
+            canvas.drawCircle(fixedPos[0], fixedPos[1], 90, mCirclePaint);//Fixed position: 100, 115
 
-            canvas.drawLine(mTempX-90, mTempY, mTempX+90, mTempY, mCrossPaint);//Fadenkreuz
-            canvas.drawLine(mTempX, mTempY-90, mTempX, mTempY+90, mCrossPaint);
-        }
+            canvas.drawLine(fixedPos[0]-90, fixedPos[1], fixedPos[0]+90, fixedPos[1], mCrossPaint);//Fadenkreuz
+            canvas.drawLine(fixedPos[0], fixedPos[1]-90, fixedPos[0], fixedPos[1]+90, mCrossPaint);
+        }*/
     }
 
     public void fix_coordinates()
     {
-        coordinates = transformCoordinates(mTempX, mTempY);
-        mEndX = coordinates[0];
-        mEndY = coordinates[1];
+        int [] new_coordinates = transformCoordinates(mTempX, mTempY);
+        mEndX = new_coordinates[0];
+        mEndY = new_coordinates[1];
     }
 
     public void reset()
     {
         mTempX = 0;
         mTempY = 0;
-        mEndX = 0;
-        mEndY = 0;
+        resetBitmapCoordinates();
         readyForTouch = false;
         invalidate();
     }
 
     public int[] transformCoordinates(int X, int Y) {
-        /*int[] location = new int[2];
-        viewImage.getLocationOnScreen(location);*/
+        /*
 
         Drawable drawable = viewImage.getDrawable();
         Rect imageBounds = drawable.getBounds();
@@ -235,27 +243,34 @@ public class DragPointView extends View {
         originalImageOffsetY = (int) (scaledImageOffsetY * heightRatio);
 
         int[] coordinates = new int[] {originalImageOffsetX, originalImageOffsetY};
+        return coordinates;*/
+
+        PointF point_touched = viewImage.transformCoordTouchToBitmap(X, Y, true);
+        int[] coordinates = new int[] {(int)point_touched.x, (int)point_touched.y};
         return coordinates;
+
     }
 
-    public int getCurX()
+    public int getScreenX()
     {
         return mTempX;
     }
 
-    public int getCurY()
+    public int getScreenY()
     {
         return mTempY;
     }
 
-    public int getFinalX()
+    public int getBitmapX()
     {
         return mEndX;
     }
 
-    public int getFinalY()
+    public int getBitmapY()
     {
         return mEndY;
     }
+
+    public void resetBitmapCoordinates () {mEndY = 0; mEndX = 0;}
 
 }

@@ -3,6 +3,7 @@ package org.chocolatemilk.ictscan;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -17,7 +18,10 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
@@ -27,22 +31,39 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.StatusLine;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -50,6 +71,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfInt;
+import org.opencv.core.Range;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -58,9 +80,9 @@ import org.opencv.utils.Converters;
 
 public class start extends ActionBarActivity {
 
-    ImageView viewImage;
+    TouchImageView viewImage;
     TextView textInfo, textTest;
-    Button b;
+    Button b_choose, b_take;
     Button btnConfirm;
 
     Bitmap thumbnail;
@@ -70,21 +92,37 @@ public class start extends ActionBarActivity {
 
     int index = -1;
 
+    RelativeLayout relLayout;
+    LinearLayout buttonsLayout;
+
+    boolean settingPoints = false;
+    boolean needToChangeSwitchItem = false;
+    boolean needToDeactivateMenuItems=false;
+    boolean useWebRequest = true;
+    boolean needToChangeWRString = false;
+
+    String lmr="", decodedSequence="";
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
+
 
         if (!OpenCVLoader.initDebug())
         {
             //Handle initialization error
         }
 
-        b = (Button) findViewById(R.id.btnSelectPhoto);//Button aus dem xml der Activity
+        b_choose = (Button) findViewById(R.id.btnSelectPhoto);
+        b_take = (Button) findViewById(R.id.btnTakePhoto);//Button aus dem xml der Activity
         btnConfirm = (Button) findViewById(R.id.btnConfirm);
-        viewImage = (ImageView) findViewById(R.id.viewImage);//ImageView -----"-----
+        viewImage = (TouchImageView) findViewById(R.id.viewImage);//ImageView -----"-----
         textInfo = (TextView) findViewById(R.id.textInfo);//TextView-------"-----
         textTest = (TextView) findViewById(R.id.textTest);//TextView-------"-----
+        relLayout = (RelativeLayout) findViewById(R.id.relLayout);
+        buttonsLayout = (LinearLayout) findViewById(R.id.buttonsLayout);
 
         points = new DragPointView[4];
         points[0] = (DragPointView) findViewById(R.id.dragPointTL);
@@ -92,10 +130,16 @@ public class start extends ActionBarActivity {
         points[2] = (DragPointView) findViewById(R.id.dragPointBR);
         points[3] = (DragPointView) findViewById(R.id.dragPointBL);
 
-        b.setOnClickListener(new View.OnClickListener() {
+        b_choose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                selectImage();
+                selectImage(2);
+            }
+        });
+        b_take.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                selectImage(1);
             }
         });
         btnConfirm.setOnClickListener(new View.OnClickListener() {
@@ -157,6 +201,39 @@ public class start extends ActionBarActivity {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_start, menu);
         //inflater.inflate(R.menu.action_restart, menu);
+
+
+        if (needToChangeWRString)
+        {
+            if (useWebRequest) menu.findItem(R.id.action_decoder).setTitle(R.string.action_decoder1);
+            else menu.findItem(R.id.action_decoder).setTitle(R.string.action_decoder2);
+        }
+
+
+        if (needToChangeSwitchItem){
+
+            if (!settingPoints){
+                menu.findItem(R.id.action_switch).setIcon(R.drawable.ic_pin_drop);
+                menu.findItem(R.id.action_switch).setTitle(R.string.action_switch1);
+            } else
+            {
+                menu.findItem(R.id.action_switch).setIcon(R.drawable.ic_photo_manip);
+                menu.findItem(R.id.action_switch).setTitle(R.string.action_switch2);
+            }
+            needToChangeSwitchItem = false;
+        }
+
+        if (needToDeactivateMenuItems)
+        {
+            menu.findItem(R.id.action_switch).setVisible(false);
+            menu.findItem(R.id.action_resetPoints).setVisible(false);
+        }
+        else
+        {
+            menu.findItem(R.id.action_switch).setVisible(true);
+            menu.findItem(R.id.action_resetPoints).setVisible(true);
+        }
+
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -179,37 +256,30 @@ public class start extends ActionBarActivity {
             case R.id.action_resetPoints:
                 openResetPoints();
                 return true;
+            case R.id.action_switch:
+                openSwitch();
+                return true;
+            case R.id.action_decoder:
+                openChangeDecoder();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    private void selectImage() {
+    private void selectImage(int i) {
 
-        final CharSequence[] options = { "Take Photo", "Choose from Gallery","Cancel" };
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(start.this); //Dialog erstellen
-        builder.setTitle("Add Photo!");
-        builder.setItems(options, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int item) {
-                if (options[item].equals("Take Photo")) //Photo machen
-                {
-                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    File f = new File(android.os.Environment.getExternalStorageDirectory(), "ICT.jpg");
-                    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
-                    startActivityForResult(intent, 1);
-                } else if (options[item].equals("Choose from Gallery")) //Photo waehlen
-                {
-                    Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                    startActivityForResult(intent, 2);
-
-                } else if (options[item].equals("Cancel")) {
-                    dialog.dismiss();
-                }
-            }
-        });
-        builder.show();
+        if (i==1) //Photo machen
+        {
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            File f = new File(android.os.Environment.getExternalStorageDirectory(), "ICT.jpg");
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
+            startActivityForResult(intent, 1);
+        } else if (i==2) //Photo waehlen
+        {
+            Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            startActivityForResult(intent, 2);
+        }
     }
 
     @Override
@@ -256,7 +326,7 @@ public class start extends ActionBarActivity {
                 }
 
                 //Reset the points and corresponding layouts
-                resetForDrawing();
+                imageChosen();
 
             }
             else if (requestCode == 2) { //chose photo from gallery
@@ -273,14 +343,14 @@ public class start extends ActionBarActivity {
                 viewImage.setImageBitmap(thumbnail);
 
                 //Reset the points and corresponding layouts
-                resetForDrawing();
+                imageChosen();
 
             }
         }
     }
 
     private void confirm() {
-        if (points[index].getX() <= 0 && points[index].getX() <= 0)
+        if (points[index].getScreenX() < 0 || points[index].getScreenY() < 0)
         {
             //Punkt noch nicht gesetzt
             Toast.makeText(getApplicationContext(), "Position your point inside the picture",
@@ -288,13 +358,14 @@ public class start extends ActionBarActivity {
             return;
         }
         boolean control = false;
+        points[index].fix_coordinates();
         if (index==0)
         {
             control = true; //Erster Punkt darf beliebig gesetzt werden
         }
         else if (index == 1)
         {
-            if (points[1].getCurX() > points[0].getCurX())
+            if (points[1].getBitmapX() > points[0].getBitmapX())
             {
                 //nur dann erlauben: zweiter Punkt ist rechts von erstem Punkt
                 control = true;
@@ -302,7 +373,7 @@ public class start extends ActionBarActivity {
         }
         else if (index == 2)
         {
-            if (points[2].getCurY() > points[1].getCurY())
+            if (points[2].getBitmapY() > points[1].getBitmapY())
             {
                 //nur dann erlauben: dritter Punkt ist unterhalb des zweiten Punkts
                 control = true;
@@ -310,16 +381,20 @@ public class start extends ActionBarActivity {
         }
         else if (index==3)
         {
-            if ((points[3].getCurX() < points[2].getCurX()) && (points[3].getCurY() > points[0].getCurY()))
+            if ((points[3].getBitmapX() < points[2].getBitmapX()) && (points[3].getBitmapY() > points[0].getBitmapY()))
             {
                 //nur dann erlauben: letzter Punkt ist unterhalb von erstem und links vom dritten Punkt
                 control = true;
             }
         }
 
+        ////////////////////////////////////////
+        //control =true; //////workaround
+        ///////////////////////////////////////
         //Wenn Position des Punktes korrekt gewählt wurde
         if (!control)
         {
+            points[index].resetBitmapCoordinates();
             //Anzeige, dass Punkt falsch gesetzt wurde!
             Toast.makeText(getApplicationContext(), "Check the position of your last point",
                     Toast.LENGTH_LONG).show();
@@ -327,7 +402,6 @@ public class start extends ActionBarActivity {
         else if (index!=3)
         {
             points[index].readyForTouch = false;
-            points[index].fix_coordinates();
             index++;
             points[index].readyForTouch = true;
             points[index].setVisibility(View.VISIBLE);
@@ -337,36 +411,138 @@ public class start extends ActionBarActivity {
         else
         {
             points[index].readyForTouch = false;
-            points[index].fix_coordinates();
             //Last Point was checked, so don't increment index
             btnConfirm.setVisibility(View.INVISIBLE); //Hide OK-Button
-
             for (int i = 0; i<4; i++)
             {
                 points[i].setVisibility(View.GONE);
             }
+            settingPoints = false;
+            //deactivate the menu options for positioning the points
+            needToDeactivateMenuItems=true;
+            invalidateOptionsMenu();
 
             imageManipulation();
         }
     }
 
-    public void resetForDrawing()
+    public void imageChosen()
     {
         //Reset the points and corresponding layouts
-        b.setVisibility(View.GONE);
-        for (int i = 1; i<4; i++)
+        buttonsLayout.setVisibility(View.GONE);
+        relLayout.setVisibility(View.VISIBLE);
+        for (int i = 0; i<4; i++)
         {
             points[i].setVisibility(View.GONE);
             points[i].reset();
             points[i].viewImage = viewImage;
         }
-        points[0].reset();
-        points[0].viewImage = viewImage;
-        points[0].readyForTouch=true;
-        points[0].setVisibility(View.VISIBLE);
-        textInfo.setText(getResources().getStringArray(R.array.textView_corners)[0]);
-        btnConfirm.setVisibility(View.VISIBLE);
         index = 0;
+        settingPoints=false;
+        textInfo.setText(getResources().getStringArray(R.array.textView_corners)[index+4]);
+    }
+
+    //Menu option restart
+    private void openRestart(){
+        //reset the drag points
+        for (int i = 0; i<4; i++ )
+        {
+            points[i].reset();
+            points[i].setVisibility(View.GONE);
+        }
+        //"delete" the shown image
+        viewImage.setImageResource(R.drawable.ic_action_camera);
+        //show -select image- objects
+        buttonsLayout.setVisibility(View.VISIBLE);
+        relLayout.setVisibility(View.GONE);
+        textInfo.setText(R.string.textView_start);
+
+        //hide confirm-button
+        btnConfirm.setVisibility(View.INVISIBLE);
+
+        //reset Menu items
+        needToDeactivateMenuItems=false;
+        needToChangeSwitchItem = true;
+        settingPoints = false;
+        viewImage.resetZoom();
+        lmr="";
+        decodedSequence="";
+        invalidateOptionsMenu();
+    }
+
+    private void openSwitch()
+    {
+        if(viewImage ==  null) return; //no image set so far
+
+        int [] Xs = {points[0].getBitmapX(), points[1].getBitmapX(), points[2].getBitmapX(), points[3].getBitmapX()};
+        int [] Ys = {points[0].getBitmapY(), points[1].getBitmapY(), points[2].getBitmapY(), points[3].getBitmapY()};
+        if (settingPoints) {
+            //switch to zoom/drag functionality
+            settingPoints = false;
+            for (int i = 0; i<4; i++ )
+            {
+                points[i].setVisibility(View.GONE);
+                points[i].readyForTouch=false;
+            }
+
+            btnConfirm.setVisibility(View.INVISIBLE);
+            textInfo.setText(getResources().getStringArray(R.array.textView_corners)[index+4]);
+
+        }
+        else {
+            //switch to setting points functionality
+            settingPoints = true;
+            points[index].setVisibility(View.VISIBLE);
+            points[index].readyForTouch = true;
+            btnConfirm.setVisibility(View.VISIBLE);
+
+            textInfo.setText(getResources().getStringArray(R.array.textView_corners)[index]);
+        }
+
+        needToChangeSwitchItem = true;
+        invalidateOptionsMenu();
+    }
+
+
+    private void openResetPoints(){
+
+        if (index<=0) return; //no point yet positioned
+
+        final CharSequence[] options = { "Reposition last point", "Reposition all points" };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(start.this); //Dialog erstellen
+        builder.setTitle("Reposition your points!");
+        builder.setItems(options, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int item) {
+                if (options[item].equals("Reposition last point")) //Only reposition the last point
+                {
+                    points[index].readyForTouch = false;
+                    points[index].setVisibility(View.GONE);
+                    index--;
+                    points[index].reset();
+                    textInfo.setText(getResources().getStringArray(R.array.textView_corners)[index]);
+                    points[index].readyForTouch = true;
+                    points[index].setVisibility(View.VISIBLE);
+                } else if (options[item].equals("Reposition all points")) //reset all points
+                {
+                    imageChosen();
+                    if (!settingPoints)openSwitch(); //you continue choosing points after resetting them
+                }
+            }
+        });
+        builder.show();
+
+    }
+
+    private boolean imageManipulation()
+    {
+        viewImage.resetZoom();
+        perspectiveTransformation();
+        edgeDetection();
+
+        startWebRequest("rmrlrrrrmmrmllrrmrlrmrrrlrrrrlmllmlll");
+        return true;
     }
 
     public void perspectiveTransformation()
@@ -380,10 +556,10 @@ public class start extends ActionBarActivity {
         Utils.bitmapToMat(image, inputMat);
         Mat outputMat = new Mat(resultWidth, resultHeight, CvType.CV_8UC4);
 
-        org.opencv.core.Point ocvPIn1 = new org.opencv.core.Point(points[0].getFinalX(), points[0].getFinalY());
-        org.opencv.core.Point ocvPIn2 = new org.opencv.core.Point(points[1].getFinalX(), points[1].getFinalY());
-        org.opencv.core.Point ocvPIn3 = new org.opencv.core.Point(points[2].getFinalX(), points[2].getFinalY());
-        org.opencv.core.Point ocvPIn4 = new org.opencv.core.Point(points[3].getFinalX(), points[3].getFinalY());
+        org.opencv.core.Point ocvPIn1 = new org.opencv.core.Point(points[0].getBitmapX(), points[0].getBitmapY());
+        org.opencv.core.Point ocvPIn2 = new org.opencv.core.Point(points[1].getBitmapX(), points[1].getBitmapY());
+        org.opencv.core.Point ocvPIn3 = new org.opencv.core.Point(points[2].getBitmapX(), points[2].getBitmapY());
+        org.opencv.core.Point ocvPIn4 = new org.opencv.core.Point(points[3].getBitmapX(), points[3].getBitmapY());
 
         List<org.opencv.core.Point> source = new ArrayList<org.opencv.core.Point>();
         source.add(ocvPIn1);
@@ -419,52 +595,6 @@ public class start extends ActionBarActivity {
         viewImage.setImageBitmap(output);
     }
 
-
-    //Menu option restart
-    private void openRestart(){
-        //reset the drag points
-        for (int i = 0; i<4; i++ )
-        {
-            points[i].reset();
-            points[i].setVisibility(View.GONE);
-        }
-        //"delete" the shown image
-        viewImage.setImageResource(R.drawable.ic_action_camera);
-        //show -select image- objects
-        b.setVisibility(View.VISIBLE);
-        textInfo.setText(R.string.textView_start);
-        //hide confirm-button
-        btnConfirm.setVisibility(View.INVISIBLE);
-    }
-
-    private void openResetPoints(){
-
-        final CharSequence[] options = { "Reposition last point", "Reposition all points" };
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(start.this); //Dialog erstellen
-        builder.setTitle("Reposition your points!");
-        builder.setItems(options, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int item) {
-                if (options[item].equals("Reposition last point")) //Only reposition the last point
-                {
-                    points[index].readyForTouch = false;
-                    points[index].setVisibility(View.GONE);
-                    index--;
-                    points[index].reset();
-                    textInfo.setText(getResources().getStringArray(R.array.textView_corners)[index]);
-                    points[index].readyForTouch = true;
-                    points[index].setVisibility(View.VISIBLE);
-                } else if (options[item].equals("Reposition all points")) //reset all points
-                {
-                    resetForDrawing();
-                }
-            }
-        });
-        builder.show();
-
-    }
-
     private void edgeDetection(){
         Bitmap input = ((BitmapDrawable)viewImage.getDrawable()).getBitmap();
         Bitmap output = Bitmap.createBitmap(input.getWidth(), input.getHeight(), Bitmap.Config.ARGB_8888);
@@ -476,15 +606,9 @@ public class start extends ActionBarActivity {
         Imgproc.cvtColor(image, gray, Imgproc.COLOR_RGB2GRAY);
         //Utils.matToBitmap(gray, output);
 
-        Imgproc.Sobel(gray, sobel, -1, 1, 0); //sobel
-
-        Utils.matToBitmap(sobel, output);
-        viewImage.setImageBitmap(output);
-
-
         //Histogram
-        /*ArrayList<Mat> listMat = new ArrayList<Mat>();
-        listMat.add(sobel);
+        ArrayList<Mat> listMat = new ArrayList<Mat>();
+        listMat.add(gray);
         MatOfInt one = new MatOfInt(0);
         Mat hist= new Mat();
         MatOfInt histSize = new MatOfInt(256);
@@ -492,13 +616,29 @@ public class start extends ActionBarActivity {
 
         Imgproc.calcHist(listMat, one, new Mat(), hist, histSize, ranges);
 
-        Scalar cdf = Core.sumElems(hist);
-        Core.MinMaxLocResult result = Core.minMaxLoc( hist);
-        double minHist = result.minVal;
-        double maxHist = result.maxVal;
-        /*Scalar cdfNormalized = cdf*minHist/cdf;*/
-        /*org.opencv.core.Point histMaxIndex = result.maxLoc; // hellster Punkt
-        org.opencv.core.Point histMinIndex = result.minLoc;
+        //Scalar cdf = Core.sumElems(hist);
+        Core.MinMaxLocResult resultMax = Core.minMaxLoc( hist);
+        org.opencv.core.Point histMaxIndex = resultMax.maxLoc; // maximaler Grauwert
+        Range columnRange = new Range((int)histMaxIndex.x, (int)histMaxIndex.x+50);
+        Core.MinMaxLocResult resultMin = Core.minMaxLoc(new Mat(hist, columnRange, Range.all()));
+        double minHist = resultMin.minVal;
+        org.opencv.core.Point histMinIndex = resultMin.minLoc; // darauffolgender minimaler Grauwert
+
+        byte buff[] = new byte[(int)gray.total()*gray.channels()];
+        gray.get(0, 0, buff);
+        for (int i = 0; i<(int)gray.total(); i++)
+        {
+            if (buff[i] > minHist) buff[i] = (byte)255;
+            else if (buff[i] <= minHist) buff[i] = 0;
+        }
+        gray.put(0, 0, buff);
+
+
+        Imgproc.Sobel(gray, sobel, -1, 1, 0); //sobel
+
+        Utils.matToBitmap(sobel, output);
+        viewImage.setImageBitmap(output);
+
 
         /*img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY);
         hist, bins = np.histogram(img_gray.flatten(), 256, [0, 256]);
@@ -514,11 +654,105 @@ public class start extends ActionBarActivity {
         img_edge[np.where(img_sobel < -1000)] = 255*/
     }
 
-    private boolean imageManipulation()
-    {
-        perspectiveTransformation();
-        edgeDetection();
-        return true;
+
+    private void openChangeDecoder(){
+        needToChangeWRString = true;
+        if (useWebRequest) useWebRequest = false;
+        else useWebRequest = true;
+        invalidateOptionsMenu();
+    }
+
+    ///////////Webrequest
+
+    public void startWebRequest(String urlText) {
+
+        if (useWebRequest) {
+            String stringUrl = "http://ict-cubes.appspot.com/?slats=" + urlText;
+            ConnectivityManager connMgr = (ConnectivityManager)
+                    getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+            if (networkInfo != null && networkInfo.isConnected()) {
+                new DownloadWebpageTask().execute(stringUrl);
+            } else {
+                Toast.makeText(getApplicationContext(), "No network connection available. Switch to offline decoder or enable network connection.",
+                        Toast.LENGTH_LONG).show();
+            }
+        }
+
+        else
+        {
+            ////Eigenen Dekoder benutzen
+        }
+    }
+
+    // Uses AsyncTask to create a task away from the main UI thread. This task takes a
+    // URL string and uses it to create an HttpUrlConnection. Once the connection
+    // has been established, the AsyncTask downloads the contents of the webpage as
+    // an InputStream. Finally, the InputStream is converted into a string, which is
+    // displayed in the UI by the AsyncTask's onPostExecute method.
+    private class DownloadWebpageTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... urls) {
+
+            // params comes from the execute() call: params[0] is the url.
+            try {
+                return downloadUrl(urls[0]);
+            } catch (IOException e) {
+                return "Unable to retrieve web page. URL may be invalid.";
+            }
+        }
+
+
+        // onPostExecute displays the results of the AsyncTask.
+        @Override
+        protected void onPostExecute(String result) {
+            Toast.makeText(getApplicationContext(), result,
+                    Toast.LENGTH_LONG).show();
+            decodedSequence=result;
+        }
+
+        // Given a URL, establishes an HttpUrlConnection and retrieves
+        // the web page content as a InputStream, which it returns as
+        // a string.
+        private String downloadUrl(String myurl) throws IOException {
+            InputStream is = null;
+            // Only display the first 500 characters of the retrieved
+            // web page content.
+            int len = 1000;
+
+            try {
+                URL url = new URL(myurl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout(10000 /* milliseconds */);
+                conn.setConnectTimeout(15000 /* milliseconds */);
+                conn.setRequestMethod("GET");
+                conn.setDoInput(true);
+                // Starts the query
+                conn.connect();
+                int response = conn.getResponseCode();
+                Log.d("Http", "The response is: " + response);
+                is = conn.getInputStream();
+
+                // Convert the InputStream into a string
+                String contentAsString = readIt(is, len);
+                return contentAsString;
+
+                // Makes sure that the InputStream is closed after the app is
+                // finished using it.
+            } finally {
+                if (is != null) {
+                    is.close();
+                }
+            }
+        }
+
+        // Reads an InputStream and converts it to a String.
+        public String readIt(InputStream stream, int len) throws IOException, UnsupportedEncodingException {
+            Reader reader = null;
+            reader = new InputStreamReader(stream, "UTF-8");
+            char[] buffer = new char[len];
+            reader.read(buffer);
+            return new String(buffer);
+        }
     }
  }
-
