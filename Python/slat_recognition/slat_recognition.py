@@ -16,10 +16,10 @@ if __name__ == '__main__':
     rectpoints = []
     
     def plot_1d(data, graph_color = 'b', use_new_figure = False):
-        if use_new_figure:
-            plt.figure()
+        #if use_new_figure:
+         #   plt.figure()
 
-        plt.plot(data, color=graph_color)
+        #plt.plot(data, color=graph_color)
         plt.xlim([0, len(data)])
 
 
@@ -41,6 +41,25 @@ if __name__ == '__main__':
         highest_n_values = sorted[0:n-1];
         return highest_n_values
 
+    def find_sequences(data, value):
+        searching = False
+        length = 0
+        start_index  = 0
+        result = []
+        for i in range(0, len(data)):
+            if(data[i] == value):
+                if(searching):
+                    length += 1
+                else:
+                    length = 1
+                    start_index = i+1
+                    searching = True
+            else:
+                if(searching):
+                    result.append((start_index, length))
+                    searching = False
+        return result
+        
     def median_filter (x, k):
         """Apply a length-k median filter to a 1D array x.
         Boundaries are extended by repeating endpoints.
@@ -65,34 +84,41 @@ if __name__ == '__main__':
         filter_floating_sum = 0.2 * np.ones(5)
 
         filter_floating_sum_50 = 1.0/50 * np.ones(50)
-
+        filter_floating_sum_150 = 1.0/150 * np.ones(150)
         transformed_img = perspective_transform(img, rectpoints)
         show_image("Transformed:", transformed_img)
 
         gray_img = cv2.cvtColor(transformed_img, cv2.COLOR_BGR2GRAY)
         gray_img_height, gray_img_width = gray_img.shape
         
+        slat_height = gray_img_height/12
+        
+        grid_data = []
+        lmr_master_uber_string = ["" for x in range(12)]
+        
         for row in range(0,12, 2):
-            first_row = gray_img[row * gray_img_height/12 + 25: (row+1) * gray_img_height/12 - 25,:]
+            first_row = gray_img[row * slat_height + 25: (row+1) * slat_height - 25,:]
             sum_first_row = np.sum(first_row, 0)
 
             first_row_mean = np.convolve(sum_first_row, filter_floating_sum);
             
-            plt.figure()
+            #plt.figure()
             #plt.plot(sum_first_row, color='b')
             #plt.xlim([0, len(sum_first_row)])
             
-            plt.plot(first_row_mean, color='r')
-            plt.xlim([0, len(first_row_mean)])
-            
-            filter_floating_sum_50 = np.ones(50)
-            filter_floating_sum_50 = 1.0/50 * filter_floating_sum_50
+            #plt.plot(first_row_mean, color='r')
+            #plt.xlim([0, len(first_row_mean)])
 
             first_row_median = median_filter(first_row_mean, 25)
 
-            plt.figure()
-            plt.plot(first_row_median, color='g')
-            plt.xlim([0, len(first_row_median)])
+            #plt.figure()
+            #plt.plot(first_row_median, color='g')
+            #plt.xlim([0, len(first_row_median)])
+
+            squared_row_median =np.square(first_row_median)
+            first_row_median_mean = np.convolve(squared_row_median, filter_floating_sum_150)
+            rooted_median = np.sqrt(first_row_median_mean)
+            plot_1d(rooted_median, 'm', False)
 
             #calculate threshold to split data into binary signal
             temp_threshold = np.mean(first_row_median)
@@ -111,6 +137,8 @@ if __name__ == '__main__':
 
             print "#found edge_indices: " + str(len(edge_indices))
             print "edge indices: " + str(edge_indices)
+
+            #plt.show()
 
             #***** find slats *****
             slats = []
@@ -136,9 +164,9 @@ if __name__ == '__main__':
             if(first_rising_edge_index  == 0):
                 print("ERROR: no rising edge found")
             
-            plt.figure() 
-            plt.plot(row_binary, color='b')
-            plt.xlim([0,len(row_binary)])
+            #plt.figure() 
+            #plt.plot(row_binary, color='b')
+            #plt.xlim([0,len(row_binary)])
             
             for slat in slats:
                 rectangle = plt.Rectangle((slat[0],0), slat[1] - slat[0], 1)
@@ -155,8 +183,8 @@ if __name__ == '__main__':
                 sp_widths.append(space[1] - space[0])
                 rectangle = plt.Rectangle((space[0],0), space[1] - space[0], 1, color = 'r')
                 plt.gca().add_patch(rectangle)
-            plt.figure()
-            plt.hist(sp_widths)
+            #plt.figure()
+            #plt.hist(sp_widths)
             print("Spaces: " + str(sp_widths))
 
             sorted_widths = sorted(widths, reverse=True)
@@ -195,7 +223,7 @@ if __name__ == '__main__':
                 rectangle = plt.Rectangle((start_position + i * grid_width, 0), 1, 1, color = 'g')
                 grid_lines.append(start_position + i * grid_width)
                 plt.gca().add_patch(rectangle)
-            plt.show();
+            #plt.show();
             
             lmr_string_arr = []
             
@@ -225,11 +253,13 @@ if __name__ == '__main__':
                 #***** get missing slats based on  spaces ******
                 if (len(slats) == 39):
                     #**** first and last slat missing ****
+                    start_position = start_position - grid_width
                     searching_first_slat = True
                     searching_last_slat = True
                 elif (len(slats) == 40):
                     #**** find 1 missing slat ****
                     if (slats[0][1] > 0.03 * gray_img_width): #first slat missing(first found slat is too far right)
+                        start_position = start_position - grid_width
                         searching_first_slat = True
                         print("Searching first slat!")
                     elif (slats[-1][0] < 0.97 * gray_img_width): #last slat missing(last found slat is too far left)
@@ -274,12 +304,69 @@ if __name__ == '__main__':
                             lmr_string.append("m")
                             print("Last slat is middle")
             elif len(slats) < 39:
-                print("ERROR: more than 2 slats missing! No reconstruction possible!")
-
+                print("3RR0R: more than 2 slats missing! No reconstruction possible!")
 
             lmr_string = "".join(lmr_string_arr)
             print(lmr_string_arr)
             print(lmr_string)
+            lmr_master_uber_string[row] = lmr_string
+            grid_data.append((start_position, grid_width))
+                    
+        line_width = gray_img_width * 10.0/3800
+        half_slat_width = 15.5/2554 * gray_img_width
+        color_diffs = []
+        for row in range(1, 12, 2):
+            starting_position = grid_data[(row-1)/2][0]
+            print(starting_position)
+            grid_width = grid_data[(row-1)/2][1]
+            print(grid_width)
+            for col in range(0,41,1):
+                cv2.line(transformed_img, (int(starting_position + col*grid_width), int(row*slat_height)),(int(starting_position +  col*grid_width), int((row + 1)* slat_height)) , (255,0,0), int(line_width))
+                mean_area_left = gray_img[int((row+0.1)*slat_height): int((row + 1 - 0.1)* slat_height), int(starting_position + col*grid_width) - half_slat_width:int(starting_position + col*grid_width) - line_width/2] 
+                mean_area_right = gray_img[int((row+0.1)*slat_height): int((row + 1 - 0.1) * slat_height), int(starting_position + col*grid_width + line_width/2):int(starting_position + col*grid_width + half_slat_width)]
+                
+                left_mean = np.mean(mean_area_left)
+                right_mean = np.mean(mean_area_right)
+                
+                color_diffs.append(int(right_mean - left_mean))
+                if(int(right_mean -left_mean) >= 10 and int(right_mean -left_mean) <= 15):
+                    print("**************************1337: " + str(row) + "/" + str(col))
+                mean_area_left[:] = left_mean
+                mean_area_right[:] = right_mean
+        
+        plt.figure()
+        color_diff_hist = plt.hist(color_diffs, 250)
+        zero_sequences = sorted(find_sequences(color_diff_hist[0], 0), key=lambda x: x[1], reverse = True)
+        
+        ausdruck = (color_diff_hist[1][zero_sequences[0][0] + zero_sequences[0][1]/2],color_diff_hist[1][zero_sequences[1][0] + zero_sequences[1][1]/2])
+        
+        left_threshold = min(ausdruck)
+        right_threshold = max(ausdruck)
+        
+        lmr_string = ""
+        row_count = 1
+        slat_count = 0
+        for color_diff in color_diffs:
+            if(color_diff < left_threshold):
+                lmr_string += "l"    
+            elif(color_diff > right_threshold):
+                lmr_string += "r"
+            else:
+                lmr_string += "m"
+            slat_count += 1
+            if(slat_count == 41):
+                lmr_master_uber_string[row_count] = lmr_string
+                lmr_string = ""
+                row_count += 2
+                slat_count = 0
+            
+        print(lmr_master_uber_string)
+        print(lmr_string)
+        print(zero_sequences)
+        print(color_diff_hist)
+        plt.figure()
+        plt.imshow(gray_img, cmap="gray")
+        plt.show()
 
     def mouse_callback(event,x,y,flags,param):
         global img
@@ -329,3 +416,4 @@ if __name__ == '__main__':
     '''
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
