@@ -95,7 +95,7 @@ public class DragPointView extends View {
         mPointPaint = new Paint();
         mPointPaint.setColor(getContext().getResources().getColor(R.color.holo_green_light));
         mPointPaint.setStyle(Paint.Style.STROKE);
-        mPointPaint.setStrokeWidth(5); // TODO: should take from resources
+        mPointPaint.setStrokeWidth(10); // TODO: should take from resources
 
         mTextPaint = new TextPaint();
         mTextPaint.setColor(getContext().getResources().getColor(R.color.holo_green_light));
