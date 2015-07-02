@@ -26,6 +26,7 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -55,6 +56,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -77,15 +79,17 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
 
+import javax.microedition.khronos.opengles.GL10;
+
 
 public class start extends ActionBarActivity {
 
     TouchImageView viewImage;
     TextView textInfo, textTest;
-    Button b_choose, b_take;
+    Button btnChoose, btnTake;
     Button btnConfirm;
 
-    Bitmap thumbnail;
+    Bitmap thumbnail, origImage;
 
     DragPointView [] points;
     PointF [] coordinates;
@@ -104,6 +108,9 @@ public class start extends ActionBarActivity {
     String lmr="", decodedSequence="";
 
 
+    //Matrizen
+    Mat mInput, mGray;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,8 +122,8 @@ public class start extends ActionBarActivity {
             //Handle initialization error
         }
 
-        b_choose = (Button) findViewById(R.id.btnSelectPhoto);
-        b_take = (Button) findViewById(R.id.btnTakePhoto);//Button aus dem xml der Activity
+        btnChoose = (Button) findViewById(R.id.btnSelectPhoto);
+        btnTake = (Button) findViewById(R.id.btnTakePhoto);//Button aus dem xml der Activity
         btnConfirm = (Button) findViewById(R.id.btnConfirm);
         viewImage = (TouchImageView) findViewById(R.id.viewImage);//ImageView -----"-----
         textInfo = (TextView) findViewById(R.id.textInfo);//TextView-------"-----
@@ -130,13 +137,13 @@ public class start extends ActionBarActivity {
         points[2] = (DragPointView) findViewById(R.id.dragPointBR);
         points[3] = (DragPointView) findViewById(R.id.dragPointBL);
 
-        b_choose.setOnClickListener(new View.OnClickListener() {
+        btnChoose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 selectImage(2);
             }
         });
-        b_take.setOnClickListener(new View.OnClickListener() {
+        btnTake.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 selectImage(1);
@@ -330,18 +337,29 @@ public class start extends ActionBarActivity {
 
             }
             else if (requestCode == 2) { //chose photo from gallery
-
                 Uri selectedImage = data.getData();
                 String[] filePath = { MediaStore.Images.Media.DATA };
-                Cursor c = getContentResolver().query(selectedImage,filePath, null, null, null);
+                Cursor c = getContentResolver().query(selectedImage, filePath, null, null, null);
                 c.moveToFirst();
                 int columnIndex = c.getColumnIndex(filePath[0]);
                 String picturePath = c.getString(columnIndex);
                 c.close();
+
                 thumbnail = (BitmapFactory.decodeFile(picturePath));
+
+                if (thumbnail.getHeight()>GL10.GL_MAX_TEXTURE_SIZE || thumbnail.getWidth()>GL10.GL_MAX_TEXTURE_SIZE)
+                {
+                    getResizedThumbnail();
+                }
+
                 Log.w("path of image from gallery......******************.........", picturePath+"");
                 viewImage.setImageBitmap(thumbnail);
-
+                /*
+                if(thumbnail!=null)
+                {
+                    thumbnail.recycle();
+                    thumbnail=null;
+                }*/
                 //Reset the points and corresponding layouts
                 imageChosen();
 
@@ -440,6 +458,7 @@ public class start extends ActionBarActivity {
         index = 0;
         settingPoints=false;
         textInfo.setText(getResources().getStringArray(R.array.textView_corners)[index+4]);
+        viewImage.resetZoom();
     }
 
     //Menu option restart
@@ -537,24 +556,31 @@ public class start extends ActionBarActivity {
 
     private boolean imageManipulation()
     {
+
         viewImage.resetZoom();
         perspectiveTransformation();
-        edgeDetection();
-
-        startWebRequest("rmrlrrrrmmrmllrrmrlrmrrrlrrrrlmllmlll");
+        //viewImage.resetZoom();
+        //edgeDetection();
+        viewImage.resetZoom();
+        //lmr = masked();
+        //textInfo.setText(lmr);
+        //startWebRequest(lmr);
+        gray();
         return true;
     }
 
     public void perspectiveTransformation()
     {
-        Bitmap image = ((BitmapDrawable)viewImage.getDrawable()).getBitmap();
 
-        int resultWidth = 500;
-        int resultHeight = 500;
+        //prepare Mats
+        int resultWidth = 1025;
+        int resultHeight = 600;
+        origImage = ((BitmapDrawable)viewImage.getDrawable()).getBitmap();
+        mInput = new Mat (origImage.getHeight(), origImage.getWidth(), CvType.CV_32F);
+        Utils.bitmapToMat(origImage, mInput);
+        Bitmap output = Bitmap.createBitmap(resultWidth, resultHeight, Bitmap.Config.RGB_565);
 
-        Mat inputMat = new Mat(image.getHeight(), image.getHeight(), CvType.CV_8UC4);
-        Utils.bitmapToMat(image, inputMat);
-        Mat outputMat = new Mat(resultWidth, resultHeight, CvType.CV_8UC4);
+        Mat mOutput = new Mat(resultHeight, resultWidth, CvType.CV_32F);
 
         org.opencv.core.Point ocvPIn1 = new org.opencv.core.Point(points[0].getBitmapX(), points[0].getBitmapY());
         org.opencv.core.Point ocvPIn2 = new org.opencv.core.Point(points[1].getBitmapX(), points[1].getBitmapY());
@@ -584,31 +610,31 @@ public class start extends ActionBarActivity {
 
         Mat perspectiveTransform = Imgproc.getPerspectiveTransform(startM, endM);
 
-        Imgproc.warpPerspective(inputMat,
-                outputMat,
+        Imgproc.warpPerspective(mInput,
+                mOutput,
                 perspectiveTransform,
                 new Size(resultWidth, resultHeight),
                 Imgproc.INTER_CUBIC);
 
-        Bitmap output = Bitmap.createBitmap(resultWidth, resultHeight, Bitmap.Config.RGB_565);
-        Utils.matToBitmap(outputMat, output);
+        Utils.matToBitmap(mOutput, output);
         viewImage.setImageBitmap(output);
+
     }
 
     private void edgeDetection(){
-        Bitmap input = ((BitmapDrawable)viewImage.getDrawable()).getBitmap();
-        Bitmap output = Bitmap.createBitmap(input.getWidth(), input.getHeight(), Bitmap.Config.ARGB_8888);
-        //grayscale
-        Mat image = new Mat (input.getWidth(), input.getHeight(), CvType.CV_32F);
-        Mat gray = new Mat (input.getWidth(), input.getHeight(), CvType.CV_32F);
-        Mat sobel = new Mat (input.getWidth(), input.getHeight(), CvType.CV_32F);
-        Utils.bitmapToMat(input, image);
-        Imgproc.cvtColor(image, gray, Imgproc.COLOR_RGB2GRAY);
-        //Utils.matToBitmap(gray, output);
+        //prepare Mat's
+        origImage = ((BitmapDrawable)viewImage.getDrawable()).getBitmap();
+        mInput = new Mat (origImage.getHeight(), origImage.getWidth(), CvType.CV_32F);
+        Utils.bitmapToMat(origImage, mInput);
+        mGray = new Mat (origImage.getHeight(), origImage.getWidth(), CvType.CV_32F);
+        Imgproc.cvtColor(mInput, mGray, Imgproc.COLOR_RGB2GRAY);
+        Bitmap output = Bitmap.createBitmap(origImage.getWidth(), origImage.getHeight(), Bitmap.Config.ARGB_8888);
+
+        Mat sobel = new Mat (origImage.getHeight(), origImage.getWidth(), CvType.CV_32F);
 
         //Histogram
         ArrayList<Mat> listMat = new ArrayList<Mat>();
-        listMat.add(gray);
+        listMat.add(mGray);
         MatOfInt one = new MatOfInt(0);
         Mat hist= new Mat();
         MatOfInt histSize = new MatOfInt(256);
@@ -623,21 +649,21 @@ public class start extends ActionBarActivity {
         Core.MinMaxLocResult resultMin = Core.minMaxLoc(new Mat(hist, columnRange, Range.all()));
         double minHist = resultMin.minVal;
         org.opencv.core.Point histMinIndex = resultMin.minLoc; // darauffolgender minimaler Grauwert
-
-        byte buff[] = new byte[(int)gray.total()*gray.channels()];
-        gray.get(0, 0, buff);
-        for (int i = 0; i<(int)gray.total(); i++)
+        byte buff[] = new byte[(int)mGray.total()*mGray.channels()];
+        mGray.get(0, 0, buff);
+        for (int i = 0; i<(int)mGray.total(); i++)
         {
             if (buff[i] > minHist) buff[i] = (byte)255;
             else if (buff[i] <= minHist) buff[i] = 0;
         }
-        gray.put(0, 0, buff);
+        mGray.put(0, 0, buff);
 
 
-        Imgproc.Sobel(gray, sobel, -1, 1, 0); //sobel
+        Imgproc.Sobel(mGray, sobel, -1, 1, 0); //sobel
 
         Utils.matToBitmap(sobel, output);
         viewImage.setImageBitmap(output);
+
 
 
         /*img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY);
@@ -754,5 +780,132 @@ public class start extends ActionBarActivity {
             reader.read(buffer);
             return new String(buffer);
         }
+    }
+
+
+    private String masked ()
+    {
+        origImage = ((BitmapDrawable)viewImage.getDrawable()).getBitmap();
+        mInput = new Mat (origImage.getHeight(), origImage.getWidth(), CvType.CV_32F);
+        Utils.bitmapToMat(origImage, mInput);
+        mGray = new Mat (origImage.getHeight(), origImage.getWidth(), CvType.CV_8U);
+        Mat mMeanImage = new Mat (origImage.getHeight(), origImage.getWidth(), CvType.CV_8U);
+        Imgproc.cvtColor(mInput, mGray, Imgproc.COLOR_RGB2GRAY);
+
+        //Transfer gray Image to array
+
+        byte grayValues[] = new byte[(int)mGray.total()*mGray.channels()];
+        byte meanValues[] = new byte[(int)mGray.total()*mGray.channels()];
+        mGray.get(0, 0, grayValues);
+        int width = 6;
+        int left = 0;
+        int right = 0;
+        for (int i = 0; i<(50*12); i+=50)
+        {
+            for (int j = 0; j<(25*41); j+=25)
+            {
+
+                for (int x = 0; x<2; x++ )
+                {
+                    left = j+9;
+                    right = j+9;
+                    if (x==0) left -= width;
+                    else right -= width;
+                    //put half of the slat in new array grayValuesPart
+                    //calculate mean gray value of this section
+                    //set this section in mean image to the calculated mean value
+                    byte[] grayValuesPart = new byte[50*width];
+                    for(int n = 0; n <50; n++)
+                    {
+                        for (int z = 0; z < width; z++)
+                        {                                            //zeilen zahl + spaltenzahl
+                            grayValuesPart[n*width + z] = grayValues[(i+n)*1025+ (left+z)];
+                        }
+                    }
+                    Mat mGrayValuesPart = new Mat(origImage.getHeight()/12, origImage.getWidth()/41, CvType.CV_8U);
+                    mGrayValuesPart.put(0,0,grayValuesPart);
+                    Scalar meanGrayS = Core.mean(mGrayValuesPart);
+                    byte meanGray = (byte) meanGrayS.val[0];
+                    for(int n = 0; n <50; n++)
+                    {
+                        if (x==0) {
+                            for (int z = 0; z < 13; z++) {
+                                meanValues[(i + n) * 1025 + j + z] = meanGray;
+                            }
+                        }
+                        else
+                        {
+                            for (int z = 13; z < 25; z++) {
+                                meanValues[(i + n) * 1025 + j + z] = meanGray;
+                            }
+
+                        }
+                    }
+
+                }
+            }
+        }
+        mMeanImage.put(0, 0, meanValues);
+        //Mat mOutput = new Mat (origImage.getHeight(), origImage.getWidth(), CvType.CV_8U);
+        Bitmap output = Bitmap.createBitmap(origImage.getWidth(),origImage.getHeight(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(mMeanImage, output);
+        viewImage.setImageBitmap(output);
+
+        int [] [] slatDifferences = new int[12][41];
+        String slatString = "";
+
+
+
+        for (int i = 0; i <12; i++) {
+            for (int j = 0; j < 41; j++) {
+                slatDifferences[i][j] = meanValues[50 * i * 1025 + j * 25 + 9 - 2] - meanValues[50 * i * 1025 + j * 25 + 9 + 2];
+                if (Math.abs(slatDifferences[i][j]) <= 35) {
+                    slatString += "m";
+                } else if (slatDifferences[i][j] < 0) {
+                    slatString += "r";
+                } else {
+                    slatString += "l";
+                }
+            }
+        }
+
+        return slatString;
+
+    }
+
+    public void getResizedThumbnail() {
+
+        float width = (float)thumbnail.getWidth();
+        float height = (float)thumbnail.getHeight();
+        float newWidth = (float)GL10.GL_MAX_TEXTURE_SIZE, newHeight =(float) GL10.GL_MAX_TEXTURE_SIZE;
+        float scaler = 0f;
+
+        //Choose newWidth/newHeight:
+        if (width > height) // landscape
+        {
+            scaler = ( newWidth) / width;
+            newHeight = (scaler*height);
+        } else{
+            scaler = newHeight / height;
+            newWidth = (scaler*width);
+        }
+
+        // "RECREATE" THE NEW BITMAP
+        thumbnail = Bitmap.createScaledBitmap(thumbnail, (int)newWidth,(int) newHeight, false);
+
+    }
+
+    public void gray(){
+        origImage = ((BitmapDrawable)viewImage.getDrawable()).getBitmap();
+        int height = origImage.getHeight();
+        int width = origImage.getWidth();
+        mInput = new Mat (origImage.getHeight(), origImage.getWidth(), CvType.CV_32F);
+        Utils.bitmapToMat(origImage, mInput);
+        mGray = new Mat (origImage.getHeight(), origImage.getWidth(), CvType.CV_8UC1);
+        Imgproc.cvtColor(mInput, mGray, Imgproc.COLOR_RGB2GRAY);
+        Bitmap output = Bitmap.createBitmap(origImage.getWidth(), origImage.getHeight(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(mGray, output);
+        viewImage.setImageBitmap(output);
+
     }
  }
