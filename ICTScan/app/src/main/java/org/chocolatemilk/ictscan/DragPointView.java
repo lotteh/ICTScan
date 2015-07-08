@@ -93,29 +93,30 @@ public class DragPointView extends View {
      */
     private void init() {
         mPointPaint = new Paint();
-        mPointPaint.setColor(getContext().getResources().getColor(R.color.holo_green_light));
+        mPointPaint.setColor(getContext().getResources().getColor(R.color.cornercolor));
         mPointPaint.setStyle(Paint.Style.STROKE);
-        mPointPaint.setStrokeWidth(10); // TODO: should take from resources
+        mPointPaint.setStrokeWidth(10);
 
         mTextPaint = new TextPaint();
-        mTextPaint.setColor(getContext().getResources().getColor(R.color.holo_green_light));
+        mTextPaint.setColor(getContext().getResources().getColor(R.color.cornercolor));
         mTextPaint.setTextSize(20);
 
+        /*
         zooming = false;
         matrix = new Matrix();
         mCirclePaint = new Paint();
 
+
         mCrossPaint = new Paint();
         mCrossPaint.setColor(getContext().getResources().getColor(R.color.gray_cross));
         mCrossPaint.setStyle(Paint.Style.STROKE);
-        mCrossPaint.setStrokeWidth(5);
+        mCrossPaint.setStrokeWidth(5);*/
 
 }
 
     @Override
     public boolean onTouchEvent(final MotionEvent event) {
         if (!readyForTouch) return true;
-        // TODO: be aware of multi-touches
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mDrawPoint = false;

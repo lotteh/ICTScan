@@ -10,16 +10,6 @@
         android:orderInCategory="2"
         app:showAsAction="ifRoom" />
     <item
-        android:id="@+id/action_decoder"
-        android:title="@string/action_decoder1"
-        android:orderInCategory="97"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/action_settings"
-        android:title="@string/action_settings"
-        android:orderInCategory="98"
-        app:showAsAction="never" />
-    <item
         android:id="@+id/action_about"
         android:title="@string/action_about"
         android:orderInCategory="99"
@@ -36,4 +26,9 @@
         android:title="@string/action_switch1"
         android:orderInCategory="1"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_decoder"
+        android:title="@string/action_decoder1"
+        android:orderInCategory="97"
+        app:showAsAction="never" />
 </menu>

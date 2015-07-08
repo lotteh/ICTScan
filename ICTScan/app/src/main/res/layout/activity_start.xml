@@ -48,7 +48,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
-        android:layout_weight="1">
+        android:layout_weight="2">
 
         <org.chocolatemilk.ictscan.TouchImageView
             android:id="@+id/viewImage"
@@ -92,14 +92,40 @@
             android:text="@string/OK"
             android:layout_centerVertical="true"
             android:visibility="invisible"/>
-        <TextView
-            android:id="@+id/textTest"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:gravity="center"
-            android:layout_below="@+id/btnConfirm"
-            android:layout_alignParentRight="true"/>
 
         </RelativeLayout>
+
+    <TextView
+        android:id="@+id/textRowCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/rowcountString"
+        android:gravity="center"
+        android:visibility="gone"/>
+
+    <RelativeLayout
+        android:id="@+id/rowcountLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:layout_weight="1">
+        <NumberPicker
+            android:id="@+id/numberPicker"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:padding="30dp">
+        </NumberPicker>
+        <Button
+            android:id="@+id/btnRowConfirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:text="@string/OK"
+            android:visibility="visible"/>
+
+    </RelativeLayout>
 </LinearLayout>

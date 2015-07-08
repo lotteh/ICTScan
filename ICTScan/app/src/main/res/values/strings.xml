@@ -38,6 +38,11 @@
         <item>Reposition the image for top-right corner</item>
         <item>Reposition the image for bottom-right corner</item>
         <item>Reposition the image for bottom-left corner</item>
+        <item>Starting from the top, how many rows have been selected?</item>
     </string-array>
+
+    <string name="aboutThisApp">testtest blabla chocolatemilk</string>
+
+    <string name="rowcountString">Number of rows selected:</string>
 
 </resources>
