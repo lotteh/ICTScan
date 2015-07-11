@@ -1,0 +1,33 @@
+menu_start:
+
+<item
+        android:id="@+id/action_settings"
+        android:title="@string/action_settings"
+        android:orderInCategory="98"
+        app:showAsAction="never" />
+ <item
+       	android:id="@+id/action_switch"
+     	android:icon="@drawable/ic_pin_drop"
+      	android:title="@string/action_switch1"
+     	android:orderInCategory="1"
+    	app:showAsAction="always" />
+<item
+        android:id="@+id/action_resetPoints"
+        android:icon="@drawable/ic_open_with_white_24dp"
+        android:title="@string/action_resetPoints"
+        android:orderInCategory="3"
+        app:showAsAction="ifRoom" />
+
+public static void main(String[] args) throws IOException
+	{
+		byte[] image_byte_data = extractBytes(IMAGE_PATH);
+		byte[][] formated_data = reshape(image_byte_data, IMAGE_HEIGHT, IMAGE_WIDTH);
+
+		ICTCubeSlatDecoder decoder = new ICTCubeSlatDecoder(formated_data, 3813, 3428);
+		decoder.decode();
+	}
+
+
+TODO:
+pixel offset display abhängig machen
+imageview rand lassen

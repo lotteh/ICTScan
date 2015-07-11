@@ -1,7 +1,7 @@
-package org.chocolatemilk.ictscan;
+package org.chocolatemilk.decoder;
 
 import java.util.HashMap;
-class ICTSlatDecoder
+public class ICTSlatDecoder
 {
     private final String[] scientist_names =
             {
@@ -192,5 +192,6 @@ class ICTSlatDecoder
             bitstream_ = sb.toString();
             return bitstream_;
         }
+
     }
 }

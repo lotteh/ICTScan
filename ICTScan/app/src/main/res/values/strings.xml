@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ICTScan</string>
+    <string name="app_name">ICTscan</string>
 
     <string name="action_settings">Settings</string>
     <string name="action_restart">Restart with new photo</string>
@@ -23,6 +23,7 @@
     <string name="leer"> </string>
     <string name="confirm">"Press -OK- , if your point is ok"</string>
     <string name="OK">OK</string>
+    <string name="Cancel">Cancel</string>
 
     <string-array
         name="textView_corners">
@@ -41,8 +42,16 @@
         <item>Starting from the top, how many rows have been selected?</item>
     </string-array>
 
-    <string name="aboutThisApp">testtest blabla chocolatemilk</string>
+    <string name="aboutThisApp">This application is a project by Lotte Heckmann, Alexander Lewin, Merlin Marek, Birger Nordmann, Yannick Stahl, Florian Voß mentored by the Chair for Theoretical Information Technology of RWTH Aachen University.\n\n
+        You can decode the facades of the ICT Cubes in Aachen, which are encoded with a coding scheme developed by Georg Boecherer.\n
+        Please refer to http://www.georg-boecherer.de/ict-cubes.html for more information on this topic.\n\n\ndistributed under BSD license</string>
 
     <string name="rowcountString">Number of rows selected:</string>
+
+    <string name="diffDecoder">Use the other decoder</string>
+    <string name="openInfoLink">More information, please</string>
+    <string name="title_activity_splash">splash</string>
+
+    <string name="hello_world">Hello world!</string>
 
 </resources>
