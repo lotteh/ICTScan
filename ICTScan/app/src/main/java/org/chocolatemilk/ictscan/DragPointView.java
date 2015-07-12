@@ -1,6 +1,7 @@
 package org.chocolatemilk.ictscan;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapShader;
 import android.graphics.Canvas;
@@ -14,8 +15,11 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.util.TypedValue;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 
 /**
@@ -24,6 +28,7 @@ import android.widget.ImageView;
 
 public class DragPointView extends View {
 
+    private int offset = 0;
     private Paint mPointPaint;
     private int mTempX = 0;
     private int mTempY = 0;
@@ -35,16 +40,17 @@ public class DragPointView extends View {
 
 
     private boolean zooming = false;
+    /*
     private Matrix matrix;
     private Bitmap mBitmap;
     private BitmapShader mShader;
     private Paint mCirclePaint;
-    private Paint mCrossPaint;
+    private Paint mCrossPaint;*/
     public TouchImageView viewImage;
 
     private DragPointView.OnUpCallback mCallback = null;
 
-
+    /*
     private int intrinsicHeight = 0;
     private int intrinsicWidth = 0;
     private int scaledHeight = 0;
@@ -56,7 +62,7 @@ public class DragPointView extends View {
     private int originalImageOffsetX = 0;
     private int originalImageOffsetY = 0;
 
-    private int [] fixedPos = new int[2];
+    private int [] fixedPos = new int[2];*/
     private int [] coordinates = new int [2];
 
     public interface OnUpCallback {
@@ -93,16 +99,23 @@ public class DragPointView extends View {
      */
     private void init() {
         mPointPaint = new Paint();
-        mPointPaint.setColor(getContext().getResources().getColor(R.color.cornercolor));
+        TypedValue typedValue = new TypedValue();
+        TypedArray a = getContext().obtainStyledAttributes(typedValue.data, new int[]{R.attr.colorAccent});
+        int accentcolor = a.getColor(0, 0);
+        a.recycle();
+        mPointPaint.setColor(accentcolor);
+        //mPointPaint.setColor(getContext().getResources().getColor(R.color.cornercolor));
         mPointPaint.setStyle(Paint.Style.STROKE);
         mPointPaint.setStrokeWidth(10);
 
         mTextPaint = new TextPaint();
-        mTextPaint.setColor(getContext().getResources().getColor(R.color.cornercolor));
+        mTextPaint.setColor(accentcolor);
+        //mTextPaint.setColor(getContext().getResources().getColor(R.color.cornercolor));
         mTextPaint.setTextSize(20);
 
-        /*
+
         zooming = false;
+        /*
         matrix = new Matrix();
         mCirclePaint = new Paint();
 
@@ -112,24 +125,38 @@ public class DragPointView extends View {
         mCrossPaint.setStyle(Paint.Style.STROKE);
         mCrossPaint.setStrokeWidth(5);*/
 
+        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
+        Display display = wm.getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        int width = size.x;
+
+        offset = -width/20;
+
 }
 
     @Override
     public boolean onTouchEvent(final MotionEvent event) {
         if (!readyForTouch) return true;
+
         switch (event.getAction()) {
+
             case MotionEvent.ACTION_DOWN:
+                mTempX = (int) event.getX() +offset;
+                mTempY = (int) event.getY() +offset;
+                if (mTempX<0) mTempX = 0;
+                if (mTempY<0) mTempY = 0;
                 mDrawPoint = false;
-                mTempX = (int) event.getX();
-                mTempY = (int) event.getY();
-                zooming = true;
+                //zooming = true;
                 coordinates = transformCoordinates(mTempX,mTempY);
                 invalidate();
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                final int x = (int) event.getX();
-                final int y = (int) event.getY();
+                int x = (int) event.getX()+offset;
+                int y = (int) event.getY()+offset;
+                if (x<0) mTempX = 0;
+                if (x<0) mTempY = 0;
 
                 if (!mDrawPoint || Math.abs(x - mTempX) > 2 || Math.abs(y - mTempY) > 2) {
                     mTempX = x;
@@ -167,13 +194,13 @@ public class DragPointView extends View {
     @Override
     protected void onDraw(final Canvas canvas) {
         super.onDraw(canvas);
-        scaledWidth=this.getWidth();
+        /*scaledWidth=this.getWidth();
         scaledHeight=this.getHeight();
 
         if (mTempX<scaledWidth/2) fixedPos[0] = (int)(scaledWidth*0.75);
         else fixedPos[0] = (int)(scaledWidth*0.25);
         if (mTempY<scaledHeight/2) fixedPos[1] = (int)(scaledHeight*0.75);
-        else fixedPos[1] = (int)(scaledHeight*0.25);
+        else fixedPos[1] = (int)(scaledHeight*0.25);*/
 
         if (mDrawPoint) {
             canvas.drawPoint(mTempX, mTempY, mPointPaint);

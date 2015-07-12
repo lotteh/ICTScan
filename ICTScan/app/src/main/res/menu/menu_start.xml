@@ -14,18 +14,7 @@
         android:title="@string/action_about"
         android:orderInCategory="99"
         app:showAsAction="never" />
-    <item
-        android:id="@+id/action_resetPoints"
-        android:icon="@drawable/ic_open_with_white_24dp"
-        android:title="@string/action_resetPoints"
-        android:orderInCategory="3"
-        app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/action_switch"
-        android:icon="@drawable/ic_pin_drop"
-        android:title="@string/action_switch1"
-        android:orderInCategory="1"
-        app:showAsAction="always" />
+
     <item
         android:id="@+id/action_decoder"
         android:title="@string/action_decoder1"

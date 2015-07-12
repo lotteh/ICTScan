@@ -3,129 +3,186 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/LinearLayout1"
     android:orientation="vertical"
     android:gravity="center"
     tools:context=".start"
-    android:padding="10dp">
-
-    <TextView
-        android:id="@+id/textInfo"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/textView_start"
-        android:gravity="center"/>
-
+    android:padding="10dp"
+    android:weightSum="1">
     <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:id="@+id/LinearLayout1"
+        android:orientation="vertical"
         android:gravity="center"
-        android:padding="10dp"
-        android:orientation="horizontal"
-        android:id="@+id/buttonsLayout">
+        tools:context=".start"
+        android:padding="10dp">
+
+        <ScrollView
+            android:id="@+id/scrollView"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/textInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/textView_start"
+                android:gravity="center"
+                android:scrollbars = "vertical"
+                android:ellipsize="end" />
+        </ScrollView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:padding="10dp"
+            android:orientation="horizontal"
+            android:id="@+id/buttonsLayout">
+
+            <Button
+                android:id="@+id/btnSelectPhoto"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="@string/button_text_1"
+                android:gravity="center"/>
+
+            <Button
+                android:id="@+id/btnTakePhoto"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="@string/button_text_2"
+                android:gravity="center"/>
+
+        </LinearLayout>
+
+
+        <RelativeLayout
+            android:id="@+id/relLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+            <NumberPicker
+                android:id="@+id/numberPicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_alignParentRight="true"
+                android:layout_marginRight="5sp"
+                android:visibility="gone">
+            </NumberPicker>
+
+            <org.chocolatemilk.ictscan.TouchImageView
+                android:id="@+id/viewImage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_action_camera"
+                android:scaleType="centerInside"
+                android:adjustViewBounds="true"
+                android:layout_centerInParent="true"
+                android:layout_toLeftOf="@+id/numberPicker"
+                android:layout_marginRight="5sp"
+                />
+
+            <org.chocolatemilk.ictscan.DragPointView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/dragPointTL"
+                android:visibility="gone"/>
+
+            <org.chocolatemilk.ictscan.DragPointView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/dragPointTR"
+                android:visibility="gone"/>
+
+            <org.chocolatemilk.ictscan.DragPointView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/dragPointBR"
+                android:visibility="gone"/>
+
+            <org.chocolatemilk.ictscan.DragPointView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/dragPointBL"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/btnConfirm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:text="@string/OK"
+                android:layout_centerVertical="true"
+                android:visibility="invisible"/>
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fab_pointdrop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:clickable="true"
+                android:src="@drawable/ic_pin_drop"
+                android:elevation = "5dp"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentBottom="true"/>
+
+            <Button
+                android:id="@+id/btnRowConfirm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginRight="5sp"
+                android:text="@string/OK"
+                android:visibility="gone"/>
+
+            </RelativeLayout>
+    </LinearLayout>
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:weightSum="1"
+        android:id = "@+id/LinearLayout2"
+        android:visibility="gone">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:id="@+id/scrollView2"
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="0.92">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:id="@+id/textResult"
+                android:layout_gravity="center_horizontal"
+                android:textIsSelectable="true"
+                android:textSize="18sp"/>
+        </ScrollView>
 
         <Button
-            android:id="@+id/btnSelectPhoto"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="@string/button_text_1"
-            android:gravity="center"/>
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/diffDecoder"
+            android:id="@+id/btnDiffDecoder"
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="0" />
 
         <Button
-            android:id="@+id/btnTakePhoto"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:text="@string/button_text_2"
-            android:gravity="center"/>
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/action_restart"
+            android:id="@+id/btnRestart"
+            android:layout_gravity="center_horizontal" />
 
     </LinearLayout>
-
-
-    <RelativeLayout
-        android:id="@+id/relLayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"
-        android:layout_weight="2">
-
-        <org.chocolatemilk.ictscan.TouchImageView
-            android:id="@+id/viewImage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_action_camera"
-            android:scaleType="fitXY"
-            android:adjustViewBounds="true"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"/>
-
-        <org.chocolatemilk.ictscan.DragPointView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/dragPointTL"
-            android:visibility="gone"/>
-
-        <org.chocolatemilk.ictscan.DragPointView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/dragPointTR"
-            android:visibility="gone"/>
-
-        <org.chocolatemilk.ictscan.DragPointView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/dragPointBR"
-            android:visibility="gone"/>
-
-        <org.chocolatemilk.ictscan.DragPointView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/dragPointBL"
-            android:visibility="gone"/>
-
-        <Button
-            android:id="@+id/btnConfirm"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:text="@string/OK"
-            android:layout_centerVertical="true"
-            android:visibility="invisible"/>
-
-        </RelativeLayout>
-
-    <TextView
-        android:id="@+id/textRowCount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/rowcountString"
-        android:gravity="center"
-        android:visibility="gone"/>
-
-    <RelativeLayout
-        android:id="@+id/rowcountLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:orientation="horizontal"
-        android:layout_gravity="center"
-        android:layout_weight="1">
-        <NumberPicker
-            android:id="@+id/numberPicker"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:padding="30dp">
-        </NumberPicker>
-        <Button
-            android:id="@+id/btnRowConfirm"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_centerVertical="true"
-            android:text="@string/OK"
-            android:visibility="visible"/>
-
-    </RelativeLayout>
 </LinearLayout>
