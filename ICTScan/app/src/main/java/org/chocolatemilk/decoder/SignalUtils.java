@@ -7,10 +7,10 @@ public class SignalUtils {
 	
 	public static int calc_area_mean(byte[][] area, int left, int top, int height, int width)
 	{
-		double sum = 0;
-		for(int x = left; x < left + width; ++x)
+		int sum = 0;
+		for(int x = left; x <= left + width; ++x)
 		{
-			for(int y = top; y < top + height; ++y)
+			for(int y = top; y <= top + height; ++y)
 			{
 				sum += ((int)area[x][y]) & 0xFF;
 			}

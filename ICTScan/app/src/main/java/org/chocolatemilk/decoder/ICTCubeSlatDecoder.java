@@ -2,19 +2,23 @@ package org.chocolatemilk.decoder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 
 public class ICTCubeSlatDecoder {
-	private static final int rows_to_decode = 12;
+	public static final int ZERO_SEQUENZ_SIZE_THRESHOLD = 15;
+	
+	private int rows_to_decode = 12;
 	
 	private byte[][] img;
 	private int img_width_, img_height_;
 	
-	public ICTCubeSlatDecoder(byte[][] img_data, int width, int height)
+	public ICTCubeSlatDecoder(byte[][] img_data, int width, int height, int rows)
 	{
 		img = img_data;
 		img_width_ = width;
 		img_height_ = height;
+		rows_to_decode = rows;
 	}
 	
 	public String decode()
@@ -53,7 +57,6 @@ public class ICTCubeSlatDecoder {
 		int left_mean, right_mean;
 		int left_threshold, right_threshold;
 		int row_count, slat_count;
-		
 		int[] sum_row;
 		int[] row_mean;
 		int[] row_median;
@@ -71,12 +74,12 @@ public class ICTCubeSlatDecoder {
 		{
 			lmr_string_builder.setLength(0);
 			
-			sum_row = SignalUtils.sum_vertical(img, 0, row * slat_height + 25, img_width_, slat_height - 25);
+			sum_row = SignalUtils.sum_vertical(img, 0,row * slat_height + 25, img_width_, slat_height - 25);
 			row_mean = SignalUtils.floating_mean(sum_row, 5);
 			
 			if(median_filter_length % 2 == 0)
 			{
-				median_filter_length -= 1;
+				median_filter_length += 1;
 			}
 			row_median = SignalUtils.median_filter(row_mean, median_filter_length);
 			
@@ -85,8 +88,7 @@ public class ICTCubeSlatDecoder {
 			
 			//***** find edge_indices *****
 			edges = SignalUtils.find_edges(row_binary);
-			System.out.println("#found edgeindices: " + Integer.toString(edges.length));
-			System.out.println("edge indices: " + Arrays.deepToString(edges));
+
 			
 			//***** find slats *****
 			slats.clear();
@@ -121,9 +123,6 @@ public class ICTCubeSlatDecoder {
 						first_rising_edge_index = edges[i][0];
 				}
 			}
-			System.out.println("Found " + Integer.toString(slats.size()) + " slats");
-			System.out.println("Slats: " + Arrays.deepToString(slats.toArray()));
-			System.out.println("Spaces: " + Arrays.deepToString(spaces.toArray()));
 			
 			if(first_rising_edge_index == 0)
 			{
@@ -162,13 +161,40 @@ public class ICTCubeSlatDecoder {
 				}
 			}
 			
-			first_center = (slats.get(big_slat_indices.get(0))[1] + slats.get(big_slat_indices.get(0))[0]) / 2;
-			second_center = (slats.get(big_slat_indices.get(big_slat_indices.size() - 1))[1] + slats.get(big_slat_indices.get(big_slat_indices.size() - 1))[0]) / 2;
-			distance = second_center - first_center;
-			grid_width = 1.0*distance/(big_slat_indices.get(big_slat_indices.size() - 1) - big_slat_indices.get(0));
-			System.out.println("Gridwidth: " + Double.toString(grid_width));
+			if(big_slat_indices.size() >= 2)
+			{
+				first_center = (slats.get(big_slat_indices.get(0))[1] + slats.get(big_slat_indices.get(0))[0]) / 2;
+				second_center = (slats.get(big_slat_indices.get(big_slat_indices.size() - 1))[1] + slats.get(big_slat_indices.get(big_slat_indices.size() - 1))[0]) / 2;
+				distance = second_center - first_center;
+				grid_width = 1.0*distance/(big_slat_indices.get(big_slat_indices.size() - 1) - big_slat_indices.get(0));
+				start_position = (int) (first_center - grid_width * big_slat_indices.get(0));
+			} 
+			else if (big_slat_indices.size() == 1) // use middle and farest slat
+			{
+				if(big_slat_indices.get(0) < 21)
+				{
+					first_center = (slats.get(big_slat_indices.get(0))[1] + slats.get(big_slat_indices.get(0))[0]) / 2;
+					second_center = (slats.get(slats.size() - 1)[1] + slats.get(slats.size() - 1)[0]) / 2; 
+					distance = second_center - first_center;
+					grid_width = 1.0 * distance/(slats.size() - 1 - big_slat_indices.get(0));
+					start_position = (int)(first_center - grid_width * big_slat_indices.get(0));
+				}
+				else
+				{
+					first_center = (slats.get(0)[1] - slats.get(0)[0]) / 2;
+					second_center = (slats.get(big_slat_indices.get(0))[1] + slats.get(big_slat_indices.get(0))[0]);
+					distance = second_center - first_center;
+					grid_width = 1.0*distance/(big_slat_indices.get(0));
+					start_position = (int)(second_center - grid_width * big_slat_indices.get(0));
+				}
+			}
+			else
+			{
+				System.err.println("Error: not enough big slats to sync the grid!");
+				return null;
+			}
+				
 			
-			start_position = (int) (first_center - grid_width * big_slat_indices.get(0));
 			grid_lines = new int[slats.size()];
 			for(int i = 0; i < slats.size(); i++)
 			{
@@ -218,16 +244,15 @@ public class ICTCubeSlatDecoder {
 					{
 						start_position = (int) (start_position - grid_width);
 						searching_first_slat = true;
-						System.out.println("Searching first slat!");
 					}
 					else if(slats.get(slats.size() - 1)[0] < 0.97 * img_width_) //last slat missing(last found slat is too far left)
 					{
-						searching_first_slat = true;
-						System.out.println("Searching last slat!");
+						searching_last_slat = true;
 					}
 					else
 					{
-						System.out.println("ERROR: neither last nor first slat seems to be missing!");
+						System.err.println("ERROR: neither last nor first slat seems to be missing!");
+						return null;
 					}
 				}
 			
@@ -270,7 +295,7 @@ public class ICTCubeSlatDecoder {
 				if(searching_last_slat)
 				{
 					//find last rising edge
-					for(int i = edges.length - 1; i >= 0; i++)
+					for(int i = edges.length - 1; i >= 0; i--)
 					{
 						if(edges[i][1] == 1)
 						{
@@ -305,7 +330,8 @@ public class ICTCubeSlatDecoder {
 			}
 			else if(slats.size() < 39)
 			{
-				System.out.println("3RR0R: more than 2 slats missing! No reconstruction possible!");
+				System.err.println("3RR0R: more than 2 slats missing! No reconstruction possible!");
+				return null;
 			}
 			
 			current_row_grid_data = new double[2];
@@ -319,11 +345,10 @@ public class ICTCubeSlatDecoder {
 		//***** odd rows *****
 		line_width = (int) (img_width_ * 10.0 / 3800);
 		half_slat_width = (int) (15.5/2554 * img_width_);
-		
 		for(int row = 1; row < rows_to_decode; row += 2)
 		{
 			start_position = (int) grid_data.get((row-1)/2)[0];
-			grid_width = grid_data.get((row-1)/2)[0];
+			grid_width = grid_data.get((row-1)/2)[1];
 			
 			for(int col = 0; col < 41; col++)
 			{
@@ -333,11 +358,37 @@ public class ICTCubeSlatDecoder {
 				color_diffs.add(right_mean - left_mean);
 			}
 		}
+
+		int[] hist = new int[201];
+		for(int color_diff: color_diffs)
+		{
+			if(color_diff <= 100 && color_diff >= -100)
+			{
+				hist[color_diff+100]++;
+			}
+		}
 		
-		//TODO: calc threshold
-		left_threshold = -100;
-		right_threshold = 100;
+		ArrayList<SlatSequence> zero_sequences = SlatSequence.find_sequences(hist, 0);
 		
+		Collections.sort(zero_sequences);
+		
+		for(double[] i : grid_data)
+		{
+			System.out.println(Arrays.toString(i));
+		}
+		
+		left_threshold = 0;
+		right_threshold = 0;
+		
+		if(zero_sequences.get(0).length > ZERO_SEQUENZ_SIZE_THRESHOLD && zero_sequences.get(1).length > ZERO_SEQUENZ_SIZE_THRESHOLD)
+		{
+			left_threshold = Math.min(zero_sequences.get(0).start_index - 100 + zero_sequences.get(0).length/2 ,
+									  zero_sequences.get(1).start_index - 100 + zero_sequences.get(1).length/2);
+			
+			right_threshold = Math.max(zero_sequences.get(0).start_index - 100 + zero_sequences.get(0).length/2 ,
+									  zero_sequences.get(1).start_index - 100 + zero_sequences.get(1).length/2);
+		}
+
 		lmr_string_builder.setLength(0);
 		row_count = 1;
 		slat_count = 0;
@@ -360,7 +411,11 @@ public class ICTCubeSlatDecoder {
 			}
 		}
 		
-		System.out.println(Arrays.toString(lmr_master_string));
-		return lmr_master_string[0];
+		lmr_string_builder.setLength(0);
+		for(int i = 0; i< lmr_master_string.length; i++)
+		{
+			lmr_string_builder.append(lmr_master_string[i]);
+		}
+		return lmr_string_builder.toString();
 	}
 }

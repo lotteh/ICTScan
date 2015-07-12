@@ -1,4 +1,14 @@
 <LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    tools:context=".start"
+    android:padding="10dp"
+    android:weightSum="1">
+    <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
@@ -9,12 +19,19 @@
         tools:context=".start"
         android:padding="10dp">
 
-        <TextView
-            android:id="@+id/textInfo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/textView_start"
-            android:gravity="center"/>
+        <ScrollView
+            android:id="@+id/scrollView"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/textInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/textView_start"
+                android:gravity="center"
+                android:scrollbars = "vertical"
+                android:ellipsize="end" />
+        </ScrollView>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -47,8 +64,7 @@
             android:id="@+id/relLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="gone"
-            android:layout_weight="2">
+            android:visibility="gone">
             <NumberPicker
                 android:id="@+id/numberPicker"
                 android:layout_width="wrap_content"
@@ -66,10 +82,10 @@
                 android:src="@drawable/ic_action_camera"
                 android:scaleType="centerInside"
                 android:adjustViewBounds="true"
-                android:layout_centerHorizontal="true"
-                android:layout_centerVertical="true"
+                android:layout_centerInParent="true"
                 android:layout_toLeftOf="@+id/numberPicker"
-                android:layout_marginRight="5sp"/>
+                android:layout_marginRight="5sp"
+                />
 
             <org.chocolatemilk.ictscan.DragPointView
                 android:layout_width="wrap_content"
@@ -127,17 +143,46 @@
                 android:visibility="gone"/>
 
             </RelativeLayout>
+    </LinearLayout>
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:weightSum="1"
+        android:id = "@+id/LinearLayout2"
+        android:visibility="gone">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:id="@+id/scrollView2"
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="0.92">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:id="@+id/textResult"
+                android:layout_gravity="center_horizontal"
+                android:textIsSelectable="true"
+                android:textSize="18sp"/>
+        </ScrollView>
+
         <Button
-            android:id="@+id/btnDiffDecoder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/diffDecoder"
-            android:visibility="gone"/>
+            android:id="@+id/btnDiffDecoder"
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="0" />
+
         <Button
-            android:id="@+id/btnRestart"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/action_restart"
-            android:visibility="gone"/>
+            android:id="@+id/btnRestart"
+            android:layout_gravity="center_horizontal" />
 
     </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:weightSum="1">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:id="@+id/scrollView2"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0.92">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:id="@+id/textResult"
+            android:layout_gravity="center_horizontal"
+            android:textIsSelectable="true"
+            android:textSize="18sp"/>
+    </ScrollView>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/diffDecoder"
+        android:id="@+id/btnDiffDecoder"
+        android:layout_gravity="center_horizontal"
+        android:layout_weight="0" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/action_restart"
+        android:id="@+id/btnRestart"
+        android:layout_gravity="center_horizontal" />
+
+</LinearLayout>

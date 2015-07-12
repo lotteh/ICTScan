@@ -2,7 +2,7 @@ package org.chocolatemilk.decoder;
 
 import java.util.ArrayList;
 
-public class SlatSequence
+public class SlatSequence implements Comparable<SlatSequence>
 {
     public int start_index;
     public int length;
@@ -54,5 +54,10 @@ public class SlatSequence
 	        }
 	    }
 	    return result;
+	}
+
+	@Override
+	public int compareTo(SlatSequence o) {
+		return Integer.compare(o.length, length);
 	}
 } 

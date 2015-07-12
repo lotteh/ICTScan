@@ -31,6 +31,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.NumberPicker;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,6 +47,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.opencv.android.OpenCVLoader;
@@ -67,7 +69,7 @@ import javax.microedition.khronos.opengles.GL10;
 public class start extends ActionBarActivity {
 
     TouchImageView viewImage;
-    TextView textInfo;
+    TextView textInfo, textResult;
     Button btnChoose, btnTake;
     Button btnConfirm, btnRowConfirm, btnDiffDecoder, btnRestart;
 
@@ -76,11 +78,14 @@ public class start extends ActionBarActivity {
     DragPointView[] points;
 
     int index = -1;
+    float scaler = 0;
+    int resultWidth = 0, resultHeight = 0;
 
     RelativeLayout relLayout;
-    LinearLayout buttonsLayout;
+    LinearLayout buttonsLayout, LinearLayout1, LinearLayout2;
     NumberPicker numberPicker;
     FloatingActionButton fab;
+    ScrollView scrollView;
 
     boolean settingPoints = false;
     boolean needToChangeSwitchItem = false;
@@ -107,14 +112,18 @@ public class start extends ActionBarActivity {
         btnTake = (Button) findViewById(R.id.btnTakePhoto);//Button aus dem xml der Activity
         btnConfirm = (Button) findViewById(R.id.btnConfirm);
         btnRowConfirm = (Button) findViewById(R.id.btnRowConfirm);
-        btnRestart = (Button) findViewById(R.id.btnRestart);
-        btnDiffDecoder = (Button) findViewById(R.id.btnDiffDecoder);
         viewImage = (TouchImageView) findViewById(R.id.viewImage);//ImageView -----"-----
         textInfo = (TextView) findViewById(R.id.textInfo);//TextView-------"-----
         relLayout = (RelativeLayout) findViewById(R.id.relLayout);
+        scrollView = (ScrollView) findViewById(R.id.scrollView);
         buttonsLayout = (LinearLayout) findViewById(R.id.buttonsLayout);
         numberPicker = (NumberPicker) findViewById(R.id.numberPicker);
         fab = (FloatingActionButton) findViewById(R.id.fab_pointdrop);
+        LinearLayout1 = (LinearLayout) findViewById(R.id.LinearLayout1);
+        LinearLayout2 = (LinearLayout) findViewById(R.id.LinearLayout2);
+        btnRestart = (Button) findViewById(R.id.btnRestart);
+        btnDiffDecoder = (Button) findViewById(R.id.btnDiffDecoder);
+        textResult = (TextView) findViewById(R.id.textResult);
 
         points = new DragPointView[4];
         points[0] = (DragPointView) findViewById(R.id.dragPointTL);
@@ -152,6 +161,7 @@ public class start extends ActionBarActivity {
                 openSwitch();
             }
         });
+
         btnDiffDecoder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -447,8 +457,8 @@ public class start extends ActionBarActivity {
 
     //Menu option restart
     private void openRestart() {
-
-
+        LinearLayout2.setVisibility(View.GONE);
+        LinearLayout1.setVisibility(View.VISIBLE);
         //reset the drag points
         for (int i = 0; i < 4; i++) {
             points[i].reset();
@@ -463,13 +473,14 @@ public class start extends ActionBarActivity {
         textInfo.setText(R.string.textView_start);
         textInfo.setTextIsSelectable(false);
         textInfo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        /*LinearLayout.LayoutParams param = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 0);
+        scrollView.setLayoutParams(param);*/
         numberPicker.setVisibility(View.GONE);
         btnRowConfirm.setVisibility(View.GONE);
         //hide confirm-button
         btnConfirm.setVisibility(View.GONE);
-        btnDiffDecoder.setVisibility(View.GONE);
-        btnRestart.setVisibility(View.GONE);
-
         fab.setImageDrawable(getResources().getDrawable(R.drawable.ic_pin_drop));
 
         //reset Menu items
@@ -583,22 +594,25 @@ public class start extends ActionBarActivity {
     private boolean imageManipulationPart2(int rowCount) {
         origImage = ((BitmapDrawable) viewImage.getDrawable()).getBitmap();
         mInput = new Mat(origImage.getHeight(), origImage.getWidth(), CvType.CV_8U);
-        byte[] image_byte_data = new byte[(int) mInput.total() * mInput.channels()];
+        Utils.bitmapToMat(origImage, mInput);
+        if (mInput.channels()!=1) Imgproc.cvtColor(mInput, mInput, Imgproc.COLOR_RGB2GRAY);
+        byte[] image_byte_data = new byte[(int) mInput.total()*mInput.channels()];
         mInput.get(0, 0, image_byte_data);
+        System.out.println("*************" + Arrays.toString(mInput.get(0, 25)));
         /////Workaround
         lmr = "lllmmrrrlllrlmlmlllrlrlrrrllrmrlmlrmmmmmrrlllllmrlrrlmrmrllmrrrrlrmrrrrllllmmr";
         ///////////////////////////////////
         /////Funktionsaufruf Slat Erkennung mit rowCount
         ///////////////////////////////////
-        //byte[][] formated_data = reshape(image_byte_data, 3428, 3813);
-        //ICTCubeSlatDecoder decoder = new ICTCubeSlatDecoder(formated_data, 3813, 3428);
-        //lmr = decoder.decode();
+        byte[][] formated_data = reshape(image_byte_data, resultHeight, resultWidth);
+        ICTCubeSlatDecoder decoder = new ICTCubeSlatDecoder(formated_data, resultWidth, resultHeight, rowCount);
+        lmr = decoder.decode();
 
-        if (!lmr.equals("")) {
+        if (lmr!=null) {
             startDecoding(lmr);
             return true;
         } else {
-            Toast.makeText(getApplicationContext(), "something went wrong.",
+            Toast.makeText(getApplicationContext(), "Something went wrong. See an example citation",
                     Toast.LENGTH_LONG).show();
             lmr = "lllmmrrrlllrlmlmlllrlrlrrrllrmrlmlrmmmmmrrlllllmrlrrlmrmrllmrrrrlrmrrrrllllmmr";
             startDecoding(lmr);
@@ -611,25 +625,50 @@ public class start extends ActionBarActivity {
         //prepare Mats
         int [] Xs = {points[0].getBitmapX(), points[1].getBitmapX(), points[2].getBitmapX(), points[3].getBitmapX()};
         int [] Ys = {points[0].getBitmapY(), points[1].getBitmapY(), points[2].getBitmapY(), points[3].getBitmapY()};
-        int resultWidth = 0, resultHeight = 0;
         if (Math.abs(Xs[0]-Xs[1]) > Math.abs(Xs[2]-Xs[3])) resultWidth = Math.abs(Xs[0]-Xs[1]);
         else resultWidth = Math.abs(Xs[2]-Xs[3]);
 
         if (Math.abs(Ys[0]-Ys[3]) > Math.abs(Ys[1]-Ys[2])) resultHeight = Math.abs(Ys[0]-Ys[3]);
         else resultHeight = Math.abs(Ys[1]-Ys[2]);
 
-        origImage = ((BitmapDrawable) viewImage.getDrawable()).getBitmap();
-        mInput = new Mat(origImage.getHeight(), origImage.getWidth(), CvType.CV_32F);
-        Utils.bitmapToMat(origImage, mInput);
-        Bitmap output = Bitmap.createBitmap(resultWidth, resultHeight, Bitmap.Config.RGB_565);
 
-        Mat mOutput = new Mat(resultHeight, resultWidth, CvType.CV_32F);
+        ////workaround
+        //resultWidth = 3813;
+        //resultHeight = 3428;
+        ///////
 
         org.opencv.core.Point ocvPIn1 = new org.opencv.core.Point(Xs[0], Ys[0]);
         org.opencv.core.Point ocvPIn2 = new org.opencv.core.Point(Xs[1], Ys[1]);
         org.opencv.core.Point ocvPIn3 = new org.opencv.core.Point(Xs[2], Ys[2]);
         org.opencv.core.Point ocvPIn4 = new org.opencv.core.Point(Xs[3], Ys[3]);
+        /////////////////////
+        /*lo: (1158, 522)
+        ro: (4771, 81)
+        ru: (4817, 3515)
+        lu: (1004, 3326)*/
+        /*int [] fixedCoordinates = {1158, 522, 4771, 81, 4817, 3515, 1004, 3326};
+        if (scaler != 0)
+        {
+            for (int i = 0; i<8; i++)
+            {
+                fixedCoordinates[i] *= scaler;
+            }
+            resultHeight *= scaler;
+            resultWidth *= scaler;
+        }*/
 
+        origImage = ((BitmapDrawable) viewImage.getDrawable()).getBitmap();
+        mInput = new Mat(origImage.getHeight(), origImage.getWidth(), CvType.CV_32F);
+        Utils.bitmapToMat(origImage, mInput);
+        Bitmap output = Bitmap.createBitmap(resultWidth, resultHeight, Bitmap.Config.ARGB_8888);
+
+        Mat mOutput = new Mat(resultHeight, resultWidth, CvType.CV_32F);
+/*
+        ocvPIn1 = new org.opencv.core.Point(fixedCoordinates[0], fixedCoordinates[1]);
+        ocvPIn2 = new org.opencv.core.Point(fixedCoordinates[2], fixedCoordinates[3]);
+        ocvPIn3 = new org.opencv.core.Point(fixedCoordinates[4], fixedCoordinates[5]);
+        ocvPIn4 = new org.opencv.core.Point(fixedCoordinates[6], fixedCoordinates[7]);*/
+        ///////////////////
         List<org.opencv.core.Point> source = new ArrayList<org.opencv.core.Point>();
         source.add(ocvPIn1);
         source.add(ocvPIn4);
@@ -765,7 +804,7 @@ public class start extends ActionBarActivity {
         float width = (float) thumbnail.getWidth();
         float height = (float) thumbnail.getHeight();
         float newWidth = (float) GL10.GL_MAX_TEXTURE_SIZE, newHeight = (float) GL10.GL_MAX_TEXTURE_SIZE;
-        float scaler = 0f;
+        scaler = 0f;
 
         //Choose newWidth/newHeight:
         if (width > height) // landscape
@@ -798,14 +837,13 @@ public class start extends ActionBarActivity {
 
     private void showResult(String result) {
         //Change layout
+        LinearLayout1.setVisibility(View.GONE);
+        LinearLayout2.setVisibility(View.VISIBLE);
         numberPicker.setVisibility(View.GONE);
         btnRowConfirm.setVisibility(View.GONE);
         viewImage.setVisibility(View.GONE);
-        btnDiffDecoder.setVisibility(View.VISIBLE);
-        btnRestart.setVisibility(View.VISIBLE);
-        textInfo.setText("Your input:\n" + lmr + "\n\nYour result:\n" + result);
-        textInfo.setTextIsSelectable(true);
-        textInfo.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
+        textResult.setText("Your result:\n" + result + "\n\nYour input:\n" + lmr);
+
     }
 
 
