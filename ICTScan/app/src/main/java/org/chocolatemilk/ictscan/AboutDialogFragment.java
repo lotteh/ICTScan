@@ -22,12 +22,24 @@ public class AboutDialogFragment extends DialogFragment {
                 .setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // just dismiss
-            }
-        })
+                    }
+                })
                 .setNeutralButton(R.string.openInfoLink, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         try {
                             Intent myIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://www.georg-boecherer.de/ict-cubes.html"));
+                            startActivity(myIntent);
+                        } catch (ActivityNotFoundException e) {
+                            Toast.makeText(getActivity(), "No application can handle this request."
+                                    + " Please install a webbrowser", Toast.LENGTH_LONG).show();
+                            e.printStackTrace();
+                        }
+                    }
+                })
+                .setNegativeButton(R.string.openTILink, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        try {
+                            Intent myIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.ti.rwth-aachen.de/index.shtml"));
                             startActivity(myIntent);
                         } catch (ActivityNotFoundException e) {
                             Toast.makeText(getActivity(), "No application can handle this request."

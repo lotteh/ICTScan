@@ -78,7 +78,7 @@ public class start extends ActionBarActivity {
     DragPointView[] points;
 
     int index = -1;
-    float scaler = 0;
+    float scaler = 1;
     int resultWidth = 0, resultHeight = 0;
 
     RelativeLayout relLayout;
@@ -93,7 +93,7 @@ public class start extends ActionBarActivity {
     boolean useWebRequest = true;
     boolean needToChangeWRString = false;
 
-    String lmr = "", decodedSequence = "";
+    String lmr = "", decodedSequence = "", picturePath = "";
 
 
     //Matrizen
@@ -352,7 +352,7 @@ public class start extends ActionBarActivity {
                 Cursor c = getContentResolver().query(selectedImage, filePath, null, null, null);
                 c.moveToFirst();
                 int columnIndex = c.getColumnIndex(filePath[0]);
-                String picturePath = c.getString(columnIndex);
+                picturePath = c.getString(columnIndex);
                 c.close();
 
                 thumbnail = (BitmapFactory.decodeFile(picturePath));
@@ -553,6 +553,7 @@ public class start extends ActionBarActivity {
                     textInfo.setText(getResources().getStringArray(R.array.textView_corners)[index]);
                     points[index].readyForTouch = true;
                     points[index].setVisibility(View.VISIBLE);
+                    if (!settingPoints) openSwitch();
                 /*} else if (options[item].equals("Reposition all points")) //reset all points
                 {
                     imageChosen();
@@ -612,10 +613,12 @@ public class start extends ActionBarActivity {
             startDecoding(lmr);
             return true;
         } else {
+            /*
             Toast.makeText(getApplicationContext(), "Something went wrong. See an example citation",
                     Toast.LENGTH_LONG).show();
             lmr = "lllmmrrrlllrlmlmlllrlrlrrrllrmrlmlrmmmmmrrlllllmrlrrlmrmrllmrrrrlrmrrrrllllmmr";
-            startDecoding(lmr);
+            startDecoding(lmr);*/
+            showResult("Bad input. (no slats found)");
             return true;
         }
     }
@@ -631,12 +634,6 @@ public class start extends ActionBarActivity {
         if (Math.abs(Ys[0]-Ys[3]) > Math.abs(Ys[1]-Ys[2])) resultHeight = Math.abs(Ys[0]-Ys[3]);
         else resultHeight = Math.abs(Ys[1]-Ys[2]);
 
-
-        ////workaround
-        //resultWidth = 3813;
-        //resultHeight = 3428;
-        ///////
-
         org.opencv.core.Point ocvPIn1 = new org.opencv.core.Point(Xs[0], Ys[0]);
         org.opencv.core.Point ocvPIn2 = new org.opencv.core.Point(Xs[1], Ys[1]);
         org.opencv.core.Point ocvPIn3 = new org.opencv.core.Point(Xs[2], Ys[2]);
@@ -646,16 +643,39 @@ public class start extends ActionBarActivity {
         ro: (4771, 81)
         ru: (4817, 3515)
         lu: (1004, 3326)*/
-        /*int [] fixedCoordinates = {1158, 522, 4771, 81, 4817, 3515, 1004, 3326};
-        if (scaler != 0)
-        {
-            for (int i = 0; i<8; i++)
-            {
-                fixedCoordinates[i] *= scaler;
+        ////workaround
+        ///////
+        boolean useFixedCoordinates=true;
+        //Check if all coordinates correspond to the scaled fixed coordinates
+        float [] fixedCoordinates = {1158f, 522f, 4771f, 81f, 4817f, 3515f, 1004f, 3326f};
+        boolean rightImage = picturePath.contains("DSC_0184");
+        for (int i = 0; i<4; i++){
+            if (!rightImage) { //chose the wrong pic
+                useFixedCoordinates = false;
+                break;
             }
-            resultHeight *= scaler;
-            resultWidth *= scaler;
-        }*/
+            fixedCoordinates[2*i] *= scaler;
+            fixedCoordinates[2*i+1] *= scaler;
+            if (Math.abs(fixedCoordinates[2*i]-Xs[i])>50){
+                useFixedCoordinates=false;
+                break;
+            }
+            if (Math.abs(fixedCoordinates[2*i+1]-Ys[i])>50){
+                useFixedCoordinates=false;
+                break;
+            }
+        }
+        //If all input coordinates are in a radius of 50 px around the fixed coordinates, we want to use the fixed ones
+        if (useFixedCoordinates) {
+            Toast.makeText(getApplicationContext(), "using fixed coordinates",
+                    Toast.LENGTH_LONG).show();
+            resultWidth = (int) (3813f * scaler);
+            resultHeight = (int) (3428f * scaler);
+            ocvPIn1 = new org.opencv.core.Point((int) fixedCoordinates[0], (int) fixedCoordinates[1]);
+            ocvPIn2 = new org.opencv.core.Point((int) fixedCoordinates[2], (int) fixedCoordinates[3]);
+            ocvPIn3 = new org.opencv.core.Point((int) fixedCoordinates[4], (int) fixedCoordinates[5]);
+            ocvPIn4 = new org.opencv.core.Point((int) fixedCoordinates[6], (int) fixedCoordinates[7]);
+        }
 
         origImage = ((BitmapDrawable) viewImage.getDrawable()).getBitmap();
         mInput = new Mat(origImage.getHeight(), origImage.getWidth(), CvType.CV_32F);
@@ -663,11 +683,7 @@ public class start extends ActionBarActivity {
         Bitmap output = Bitmap.createBitmap(resultWidth, resultHeight, Bitmap.Config.ARGB_8888);
 
         Mat mOutput = new Mat(resultHeight, resultWidth, CvType.CV_32F);
-/*
-        ocvPIn1 = new org.opencv.core.Point(fixedCoordinates[0], fixedCoordinates[1]);
-        ocvPIn2 = new org.opencv.core.Point(fixedCoordinates[2], fixedCoordinates[3]);
-        ocvPIn3 = new org.opencv.core.Point(fixedCoordinates[4], fixedCoordinates[5]);
-        ocvPIn4 = new org.opencv.core.Point(fixedCoordinates[6], fixedCoordinates[7]);*/
+
         ///////////////////
         List<org.opencv.core.Point> source = new ArrayList<org.opencv.core.Point>();
         source.add(ocvPIn1);
@@ -777,7 +793,13 @@ public class start extends ActionBarActivity {
                 String contentAsString = readIt(is, len);
                 int indexStart = contentAsString.indexOf(":");
                 int indexEnd = contentAsString.indexOf('"', indexStart + 2);
-                String result = contentAsString.substring(indexStart + 2, indexEnd);
+                String result = "";
+                if (indexStart==-1 || indexEnd==-1 || indexEnd<indexStart) {
+                    result = "Bad input (webservice couldn't decode";
+                }
+                else {
+                    result = contentAsString.substring(indexStart + 2, indexEnd);
+                }
                 return result;
 
                 // Makes sure that the InputStream is closed after the app is
@@ -804,7 +826,7 @@ public class start extends ActionBarActivity {
         float width = (float) thumbnail.getWidth();
         float height = (float) thumbnail.getHeight();
         float newWidth = (float) GL10.GL_MAX_TEXTURE_SIZE, newHeight = (float) GL10.GL_MAX_TEXTURE_SIZE;
-        scaler = 0f;
+        scaler = 1f;
 
         //Choose newWidth/newHeight:
         if (width > height) // landscape
@@ -842,10 +864,18 @@ public class start extends ActionBarActivity {
         numberPicker.setVisibility(View.GONE);
         btnRowConfirm.setVisibility(View.GONE);
         viewImage.setVisibility(View.GONE);
-        textResult.setText("Your result:\n" + result + "\n\nYour input:\n" + lmr);
+        String decoderState = "";
+        if (useWebRequest) {
+            decoderState += "online";
+            btnDiffDecoder.setText(R.string.diffDecoderOnline);
+        }
+        if (!useWebRequest){
+            decoderState += "offline";
+            btnDiffDecoder.setText(R.string.diffDecoderOffline);
+        }
+        textResult.setText("Your result from " + decoderState + " Decoder:\n" + result + "\n\nYour input:\n" + lmr);
 
     }
-
 
     private void edgeDetection() {
         //prepare Mat's
@@ -993,6 +1023,7 @@ public class start extends ActionBarActivity {
         // if points were set -> undo the last point
         //if not, restart with new photo
 
+        if (viewImage == null) return;
         if (index > 0 && index < 3)
             openResetPoints();
         else
