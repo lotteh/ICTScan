@@ -32,7 +32,7 @@ public class ICTSlatDecoder
 
     public String Decode(String input)
     {
-        String output = "Bad input";
+        String output = "Bad input. (no scientists found)";
         for(int offset = 0; offset < 3; ++offset)
         {
             String input_with_offset = input.substring(offset);

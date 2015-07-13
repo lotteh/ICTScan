@@ -48,8 +48,10 @@
 
     <string name="rowcountString">Number of rows selected:</string>
 
-    <string name="diffDecoder">Use the other decoder</string>
-    <string name="openInfoLink">More information, please</string>
+    <string name="diffDecoderOnline">Use the offline decoder</string>
+    <string name="diffDecoderOffline">Use the online decoder</string>
+    <string name="openInfoLink">More info on ICT Cubes</string>
+    <string name="openTILink">Visit TI</string>
     <string name="title_activity_splash">splash</string>
 
     <string name="hello_world">Hello world!</string>

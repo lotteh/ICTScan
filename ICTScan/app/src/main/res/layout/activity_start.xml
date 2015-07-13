@@ -168,21 +168,26 @@
                 android:textIsSelectable="true"
                 android:textSize="18sp"/>
         </ScrollView>
-
-        <Button
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/diffDecoder"
+            android:orientation="horizontal"
+            android:weightSum="2">
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/diffDecoderOffline"
             android:id="@+id/btnDiffDecoder"
             android:layout_gravity="center_horizontal"
-            android:layout_weight="0" />
+            android:layout_weight="1" />
 
         <Button
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/action_restart"
             android:id="@+id/btnRestart"
-            android:layout_gravity="center_horizontal" />
-
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="1"/>
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
