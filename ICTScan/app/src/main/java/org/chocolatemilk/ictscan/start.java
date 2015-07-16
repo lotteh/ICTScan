@@ -361,7 +361,7 @@ public class start extends ActionBarActivity {
                     getResizedThumbnail();
                 }
 
-                Log.w("path of image from gallery......******************.........", picturePath + "");
+                Log.w("path of image from gallery..***********..", picturePath + "");
                 viewImage.setImageBitmap(thumbnail);
                 /*
                 if(thumbnail!=null)
@@ -638,44 +638,6 @@ public class start extends ActionBarActivity {
         org.opencv.core.Point ocvPIn2 = new org.opencv.core.Point(Xs[1], Ys[1]);
         org.opencv.core.Point ocvPIn3 = new org.opencv.core.Point(Xs[2], Ys[2]);
         org.opencv.core.Point ocvPIn4 = new org.opencv.core.Point(Xs[3], Ys[3]);
-        /////////////////////
-        /*lo: (1158, 522)
-        ro: (4771, 81)
-        ru: (4817, 3515)
-        lu: (1004, 3326)*/
-        ////workaround
-        ///////
-        boolean useFixedCoordinates=true;
-        //Check if all coordinates correspond to the scaled fixed coordinates
-        float [] fixedCoordinates = {1158f, 522f, 4771f, 81f, 4817f, 3515f, 1004f, 3326f};
-        boolean rightImage = picturePath.contains("DSC_0184");
-        for (int i = 0; i<4; i++){
-            if (!rightImage) { //chose the wrong pic
-                useFixedCoordinates = false;
-                break;
-            }
-            fixedCoordinates[2*i] *= scaler;
-            fixedCoordinates[2*i+1] *= scaler;
-            if (Math.abs(fixedCoordinates[2*i]-Xs[i])>50){
-                useFixedCoordinates=false;
-                break;
-            }
-            if (Math.abs(fixedCoordinates[2*i+1]-Ys[i])>50){
-                useFixedCoordinates=false;
-                break;
-            }
-        }
-        //If all input coordinates are in a radius of 50 px around the fixed coordinates, we want to use the fixed ones
-        if (useFixedCoordinates) {
-            Toast.makeText(getApplicationContext(), "using fixed coordinates",
-                    Toast.LENGTH_LONG).show();
-            resultWidth = (int) (3813f * scaler);
-            resultHeight = (int) (3428f * scaler);
-            ocvPIn1 = new org.opencv.core.Point((int) fixedCoordinates[0], (int) fixedCoordinates[1]);
-            ocvPIn2 = new org.opencv.core.Point((int) fixedCoordinates[2], (int) fixedCoordinates[3]);
-            ocvPIn3 = new org.opencv.core.Point((int) fixedCoordinates[4], (int) fixedCoordinates[5]);
-            ocvPIn4 = new org.opencv.core.Point((int) fixedCoordinates[6], (int) fixedCoordinates[7]);
-        }
 
         origImage = ((BitmapDrawable) viewImage.getDrawable()).getBitmap();
         mInput = new Mat(origImage.getHeight(), origImage.getWidth(), CvType.CV_32F);
@@ -865,6 +827,8 @@ public class start extends ActionBarActivity {
         btnRowConfirm.setVisibility(View.GONE);
         viewImage.setVisibility(View.GONE);
         String decoderState = "";
+        if (lmr == null)
+            lmr = "no slats found";
         if (useWebRequest) {
             decoderState += "online";
             btnDiffDecoder.setText(R.string.diffDecoderOnline);

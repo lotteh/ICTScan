@@ -157,6 +157,12 @@ public class ICTCubeSlatDecoder {
 			}
 			
 			maximum_index = SignalUtils.max_index(sorted_widths_diff);
+			if(maximum_index < 0)
+			{
+				System.err.println("ERROR: No slats found!");
+				return null;
+			}
+
 			widths_threshold = (sorted_slat_widths[maximum_index] + sorted_slat_widths[maximum_index-1])/2;
 			
 			big_slat_indices.clear();

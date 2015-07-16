@@ -8,6 +8,33 @@ public class SignalUtils {
 	public static int calc_area_mean(byte[][] area, int left, int top, int height, int width)
 	{
 		int sum = 0;
+
+        if(top < 0)
+        {
+            top = 0;
+        }
+        if(top >= area[0].length)
+        {
+            return 0;
+        }
+        if(top + height >= area[0].length)
+        {
+            height = area[0].length - top - 1;
+        }
+
+        if(left < 0)
+        {
+            left = 0;
+        }
+        if(left >= area.length)
+        {
+            return 0;
+        }
+        if(left + width >= area.length)
+        {
+            width = area.length - left - 1;
+        }
+
 		for(int x = left; x <= left + width; ++x)
 		{
 			for(int y = top; y <= top + height; ++y)
