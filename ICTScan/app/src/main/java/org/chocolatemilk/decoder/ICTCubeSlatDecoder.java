@@ -157,7 +157,7 @@ public class ICTCubeSlatDecoder {
 			}
 			
 			maximum_index = SignalUtils.max_index(sorted_widths_diff);
-			if(maximum_index < 0)
+			if(maximum_index <= 0)
 			{
 				System.err.println("ERROR: No slats found!");
 				return null;
