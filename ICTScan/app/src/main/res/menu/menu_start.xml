@@ -17,7 +17,7 @@
 
     <item
         android:id="@+id/action_decoder"
-        android:title="@string/action_decoder1"
+        android:title="@string/action_decoder2"
         android:orderInCategory="97"
         app:showAsAction="never" />
 </menu>
