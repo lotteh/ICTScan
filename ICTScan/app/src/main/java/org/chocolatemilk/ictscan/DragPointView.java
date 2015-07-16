@@ -103,13 +103,13 @@ public class DragPointView extends View {
         TypedArray a = getContext().obtainStyledAttributes(typedValue.data, new int[]{R.attr.colorAccent});
         int accentcolor = a.getColor(0, 0);
         a.recycle();
-        mPointPaint.setColor(accentcolor);
+        mPointPaint.setColor(getResources().getColor(R.color.cornercolor));
         //mPointPaint.setColor(getContext().getResources().getColor(R.color.cornercolor));
         mPointPaint.setStyle(Paint.Style.STROKE);
         mPointPaint.setStrokeWidth(10);
 
         mTextPaint = new TextPaint();
-        mTextPaint.setColor(accentcolor);
+        mTextPaint.setColor(getResources().getColor(R.color.cornercolor));
         //mTextPaint.setColor(getContext().getResources().getColor(R.color.cornercolor));
         mTextPaint.setTextSize(20);
 
@@ -131,7 +131,7 @@ public class DragPointView extends View {
         display.getSize(size);
         int width = size.x;
 
-        offset = -width/20;
+        offset = -width/15;
 
 }
 
