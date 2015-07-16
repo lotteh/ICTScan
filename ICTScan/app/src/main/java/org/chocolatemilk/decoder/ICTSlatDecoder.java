@@ -48,7 +48,7 @@ public class ICTSlatDecoder
                     break;
                 }
             }
-            if(output != "Bad input")
+            if(output != "Bad input. (no scientists found)")
             {
                 break;
             }
