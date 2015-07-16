@@ -90,7 +90,7 @@ public class start extends ActionBarActivity {
     boolean settingPoints = false;
     boolean needToChangeSwitchItem = false;
     boolean needToDeactivateMenuItems = false;
-    boolean useWebRequest = true;
+    boolean useWebRequest = false;
     boolean needToChangeWRString = false;
 
     String lmr = "", decodedSequence = "", picturePath = "";
@@ -757,7 +757,7 @@ public class start extends ActionBarActivity {
                 int indexEnd = contentAsString.indexOf('"', indexStart + 2);
                 String result = "";
                 if (indexStart==-1 || indexEnd==-1 || indexEnd<indexStart) {
-                    result = "Bad input (webservice couldn't decode";
+                    result = "Bad input (webservice couldn't decode)";
                 }
                 else {
                     result = contentAsString.substring(indexStart + 2, indexEnd);
