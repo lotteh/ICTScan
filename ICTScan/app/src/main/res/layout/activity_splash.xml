@@ -5,16 +5,9 @@
 
     <ImageView android:id="@+id/splashscreen2" android:layout_width="wrap_content"
         android:layout_height="0dp"
-        android:src="@drawable/logo_ictscan"
+        android:src="@drawable/splashscreen"
         android:layout_gravity="center"
         android:layout_weight="5"
         android:scaleType="centerInside"/>
 
-    <ImageView android:id="@+id/splashscreen1" android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:src="@drawable/splash_ti_logo"
-        android:layout_gravity="center"
-        android:layout_weight="1"
-        android:scaleType="centerInside"
-        />
 </LinearLayout>
