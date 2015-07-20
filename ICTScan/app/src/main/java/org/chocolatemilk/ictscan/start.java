@@ -73,7 +73,7 @@ public class start extends ActionBarActivity {
     Button btnChoose, btnTake;
     Button btnConfirm, btnRowConfirm, btnDiffDecoder, btnRestart;
 
-    Bitmap thumbnail, origImage;
+    Bitmap thumbnail, origImage, photoChosen;
 
     DragPointView[] points;
 
@@ -424,7 +424,8 @@ public class start extends ActionBarActivity {
             openSwitch();
         } else {
             points[index].readyForTouch = false;
-            //Last Point was checked, so don't increment index
+            //Last Point was checked, so increment index to 4
+            index ++;
             btnConfirm.setVisibility(View.GONE); //Hide OK-Button
             for (int i = 0; i < 4; i++) {
                 points[i].setVisibility(View.GONE);
@@ -441,6 +442,7 @@ public class start extends ActionBarActivity {
 
     public void imageChosen() {
         //Reset the points and corresponding layouts
+        viewImage.setImageBitmap(BitmapFactory.decodeFile(picturePath));
         buttonsLayout.setVisibility(View.GONE);
         relLayout.setVisibility(View.VISIBLE);
         for (int i = 0; i < 4; i++) {
@@ -452,11 +454,14 @@ public class start extends ActionBarActivity {
         settingPoints = false;
         textInfo.setText(getResources().getStringArray(R.array.textView_corners)[index + 4]);
         fab.setVisibility(View.VISIBLE);
+        btnRowConfirm.setVisibility(View.GONE);
+        numberPicker.setVisibility(View.GONE);
         viewImage.resetZoom();
     }
 
     //Menu option restart
     private void openRestart() {
+        index = -1;
         LinearLayout2.setVisibility(View.GONE);
         LinearLayout1.setVisibility(View.VISIBLE);
         //reset the drag points
@@ -984,15 +989,22 @@ public class start extends ActionBarActivity {
     @Override
     public void onBackPressed() {
 
+        //index -1: start screen, do nothing or call super?
+        //index 0: first point is set, open restart dialog
+        //index 1, 2: reposition points
+        //index 3: choosing row count -> reset all points dialog
         // if points were set -> undo the last point
         //if not, restart with new photo
 
-        if (viewImage == null) return;
-        if (index > 0 && index < 3)
+        if (index < 0) super.onBackPressed();
+        else if (index > 0 && index < 4)
             openResetPoints();
+        else if (index == 4)
+        {
+            resetAllPointsDialog();
+        }
         else
             openRestartDialog();
-        return;
     }
 
     public static byte[][] reshape(byte[] data, int rows, int cols)
@@ -1026,6 +1038,32 @@ public class start extends ActionBarActivity {
                 .setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         openRestart();
+                    }
+                })
+                .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        //Just dismiss
+                    }
+                });
+        builder.show();
+    }
+
+    private void resetAllPointsDialog()
+    {
+        AlertDialog.Builder builder = new AlertDialog.Builder(start.this); //Dialog erstellen
+        builder.setTitle("Warning");
+        builder.setMessage("Do you want to reset all chosen points?")
+                .setPositiveButton(R.string.OK, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        ///Reset all points
+                        imageChosen();
+                        if (settingPoints)
+                            openSwitch(); //you continue repositioning after resetting the points
+                    }
+                })
+                .setNeutralButton(R.string.Restart, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        openRestartDialog();
                     }
                 })
                 .setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {

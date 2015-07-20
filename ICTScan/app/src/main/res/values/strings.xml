@@ -24,6 +24,7 @@
     <string name="confirm">"Press -OK- , if your point is ok"</string>
     <string name="OK">OK</string>
     <string name="Cancel">Cancel</string>
+    <string name="Restart">Start with new photo</string>
 
     <string-array
         name="textView_corners">
