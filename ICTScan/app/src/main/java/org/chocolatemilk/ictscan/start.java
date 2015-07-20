@@ -594,6 +594,7 @@ public class start extends ActionBarActivity {
 
     private void confirmRowCount() {
         int rowsSelected = numberPicker.getValue();
+        index ++;
         boolean result = imageManipulationPart2(rowsSelected);
     }
 
